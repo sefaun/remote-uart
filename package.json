@@ -1,0 +1,25 @@
+{
+  "name": "remote-uart",
+  "version": "1.0.0",
+  "description": "Alvemsis Remote-UART Application",
+  "author": "Alvemsis",
+  "license": "ISC",
+  "type": "module",
+  "packageManager": "pnpm@9.9.0",
+  "scripts": {
+    "build": "pnpm prebuild && pnpm -r build",
+    "prebuild": "node scripts/prebuild.js",
+    "postbuild": "node scripts/versions.js"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">= 20"
+  },
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/....git"
+  }
+}

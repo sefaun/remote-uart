@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@config '../../../tailwind.config.js';
+
+@layer base {
+  :root {
+    --primary-color: #00df30;
+    --navbar-height: 75px;
+  }
+}

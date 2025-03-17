@@ -1,0 +1,36 @@
+{
+  "name": "@remote-uart/shared",
+  "version": "1.0.0",
+  "description": "Alvemsis Remote-UART utils.",
+  "author": "Alvemsis",
+  "license": "ISC",
+  "type": "module",
+  "main": "/dist/index.js",
+  "types": "/dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">= 20"
+  },
+  "homepage": "https://github.com/.../tree/main/packages/shared",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/....git"
+  }
+}
