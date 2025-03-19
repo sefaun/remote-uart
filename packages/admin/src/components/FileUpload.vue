@@ -38,14 +38,65 @@
             <div>Admin ID:</div>
             <div>
               <div v-if="connectionType != connectionTypes.connect">{{ adminId }}</div>
-              <ElInput v-else class="!min-w-[300px]" v-model="adminId" :minlength="2" :maxlength="36" />
+              <ElInput
+                v-else
+                class="!min-w-[300px]"
+                v-model="adminId"
+                :minlength="adminIdLength.min"
+                :maxlength="adminIdLength.max"
+              />
             </div>
           </div>
-          <Theme />
+          <div>
+            <ElTooltip class="box-item" effect="dark" content="Kopyala" placement="bottom-end">
+              <ElIcon @click.stop="copyClientId()" class="cursor-pointer"><CopyDocument /></ElIcon>
+            </ElTooltip>
+          </div>
         </div>
       </div>
       <div class="w-full flex justify-center items-center">
         <div class="w-[75%] h-full space-y-7 mt-20">
+          <div class="flex justify-center items-center flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <div>Client ID:</div>
+              <div>
+                <div v-if="connectionType != connectionTypes.connect" class="border rounded p-0.5">{{ clientId }}</div>
+                <ElInput v-else class="!min-w-[300px]" v-model="clientId" :maxlength="clientIdLength.max" />
+              </div>
+            </div>
+          </div>
+          <div v-if="connectionType == connectionTypes.connected" class="flex justify-center items-center gap-2">
+            <div v-if="mqttClient.getConnectionControl()">
+              <div class="flex items-center gap-2">
+                <div class="flex items-center">
+                  <ElIcon color="orange">
+                    <Loading />
+                  </ElIcon>
+                </div>
+                <div>Bağlantı Kontrol Ediliyor</div>
+              </div>
+            </div>
+            <div v-else>
+              <div class="flex items-center gap-2">
+                <div class="flex items-center">
+                  <ElIcon :color="clientConnection ? 'green' : 'red'">
+                    <component :is="clientConnection ? CircleCheck : CircleClose" />
+                  </ElIcon>
+                </div>
+                <div>{{ clientConnection ? 'Bağlı' : 'Bağlı Değil' }}</div>
+              </div>
+            </div>
+            <div>
+              <ElButton
+                type="info"
+                :icon="Refresh"
+                :loading="mqttClient.getConnectionControl()"
+                @click.left="manuelClientConnectionCheck()"
+              >
+                Client Bağlantı Kontrol
+              </ElButton>
+            </div>
+          </div>
           <div class="w-full flex justify-center items-center">
             <ElUpload
               v-model:file-list="selectedFile"
@@ -83,27 +134,44 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, computed, ref } from 'vue'
 import type { Ref } from 'vue'
-import { ElNotification, ElIcon, ElUpload, ElInput, ElButton } from 'element-plus'
+import { ElNotification, ElIcon, ElUpload, ElInput, ElButton, ElTooltip } from 'element-plus'
 import type { UploadFile, UploadFiles } from 'element-plus'
-import { UploadFilled, Loading, CircleCheck, Connection } from '@element-plus/icons-vue'
+import {
+  UploadFilled,
+  Loading,
+  CircleCheck,
+  Connection,
+  CopyDocument,
+  CircleClose,
+  Refresh,
+} from '@element-plus/icons-vue'
+import { mqttTopics } from '@remote-uart/shared'
 import { useMQTT } from '@/composables/MQTT'
+import { useMqttClient } from '@/composables/MqttClient'
 import { connectionTypes } from '@/enums'
 import type { TConnectionTypes } from '@/types'
-import Theme from '@/components/Theme.vue'
 
 const mqtt = useMQTT()
+const mqttClient = useMqttClient()
 
 const incomingMessage = ref()
 const connectionStatus = ref(false)
 const connectionType: Ref<TConnectionTypes> = ref(connectionTypes.connect)
 const adminId = ref('')
+const clientId = ref('')
 const selectedFile = ref([])
 const adminIdDisabled = ref(false)
+const clientConnectionStatus = ref(false)
+const localStorageAdminIdKey: string = import.meta.env.VITE_ADMIN_ID
+const localStorageClientIdKey: string = import.meta.env.VITE_CLIENT_ID
+let uploadFileContent: Uint8Array = null
 const adminIdLength = {
   min: 4,
   max: 36,
 }
-let uploadFileContent: Uint8Array = null
+const clientIdLength = {
+  max: 36,
+}
 
 const connectionTypeIcon = computed(() => {
   switch (connectionType.value) {
@@ -133,22 +201,23 @@ const connectionTypeIcon = computed(() => {
   }
 })
 
-function getAdminId() {
-  const localData = localStorage.getItem(import.meta.env.VITE_ADMIN_ID)
-
-  if (!localData) {
-    adminId.value = window.crypto.randomUUID()
-    localStorage.setItem(import.meta.env.VITE_ADMIN_ID, adminId.value)
-  } else {
-    adminId.value = localData
-  }
-}
+const clientConnection = computed(
+  () => connectionType.value == connectionTypes.connected && clientConnectionStatus.value
+)
 
 function connectionValidation() {
   if (adminId.value.length < adminIdLength.min || adminId.value.length > adminIdLength.max) {
     ElNotification({
       type: 'warning',
       message: 'Admin ID en az 4 en fazla 36 karakter olabilir',
+    })
+    return false
+  }
+
+  if (clientId.value.length != clientIdLength.max) {
+    ElNotification({
+      type: 'warning',
+      message: 'Client ID 36 karakter olmalıdır',
     })
     return false
   }
@@ -161,7 +230,7 @@ async function handleChange(uploadFile: UploadFile, _uploadFiles: UploadFiles) {
 }
 
 function sendFile() {
-  mqtt.getConnection().publish(adminId.value, uploadFileContent as Uint8Array as Buffer)
+  mqtt.getConnection().publish(mqttTopics.client.file(clientId.value), uploadFileContent as Uint8Array as Buffer)
   ElNotification({
     type: 'success',
     message: 'Dosya Gönderildi',
@@ -171,7 +240,9 @@ function sendFile() {
 function connectionClosedOperations() {
   connectionStatus.value = false
   adminIdDisabled.value = false
+  clientConnectionStatus.value = false
   connectionType.value = connectionTypes.connect
+  mqttClient.closeCheckClientMqttConnectionStatus()
 }
 
 function closeConnection() {
@@ -186,14 +257,18 @@ function createConnection() {
   }
 
   connectionType.value = connectionTypes.connecting
-
-  mqtt.connect()
-  const connection = mqtt.getConnection()
+  const connection = mqtt.connect()
 
   connection.on('connect', () => {
     connectionStatus.value = true
     adminIdDisabled.value = true
     connectionType.value = connectionTypes.connected
+    mqttClient.checkClientMqttConnectionStatus(clientId.value)
+    connection.subscribe([
+      mqttTopics.admin.mqttConnectionStatus(clientId.value),
+      mqttTopics.admin.uartChannel(clientId.value),
+      mqttTopics.admin.uartStatus(clientId.value),
+    ])
     ElNotification({
       type: 'success',
       message: 'Bağlantı Sağlandı',
@@ -201,10 +276,21 @@ function createConnection() {
   })
 
   connection.on('message', (_topic, _payload, packet) => {
-    incomingMessage.value = JSON.parse(packet.payload as string)
+    switch (packet.topic) {
+      case mqttTopics.admin.mqttConnectionStatus(clientId.value):
+        mqttClient.setConnectionControl(false)
+        clientConnectionStatus.value = true
+        return
+      case mqttTopics.admin.uartChannel(clientId.value):
+        //
+        return
+      case mqttTopics.admin.uartStatus(clientId.value):
+        //
+        return
+    }
   })
 
-  connection.on('offline', () => {
+  connection.on('close', () => {
     ElNotification({
       type: 'error',
       message: 'Bağlantı Kapandı',
@@ -223,8 +309,37 @@ function createConnection() {
   })
 }
 
+function manuelClientConnectionCheck() {
+  mqttClient.setConnectionControl(true)
+  mqtt.getConnection().publish(mqttTopics.client.mqttConnectionStatus(clientId.value), 'ping')
+}
+
+function copyClientId() {
+  window.navigator.clipboard.writeText(clientId.value)
+  ElNotification({
+    type: 'success',
+    message: 'ID Kopyalandı',
+  })
+}
+
+function setStartingOperations() {
+  const localAdminData = localStorage.getItem(localStorageAdminIdKey)
+  const localClientData = localStorage.getItem(localStorageClientIdKey)
+
+  if (!localAdminData) {
+    adminId.value = window.crypto.randomUUID()
+    localStorage.setItem(localStorageAdminIdKey, adminId.value)
+  } else {
+    adminId.value = localAdminData
+  }
+
+  if (localClientData) {
+    clientId.value = localClientData
+  }
+}
+
 onMounted(() => {
-  getAdminId()
+  setStartingOperations()
 })
 
 onBeforeUnmount(() => {

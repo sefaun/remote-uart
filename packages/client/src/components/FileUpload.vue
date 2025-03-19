@@ -33,48 +33,23 @@
             Bağlantı Kapat
           </ElButton>
         </div>
-        <div class="flex justify-end items-center gap-2">
+        <div class="flex justify-end items-center gap-3">
           <div class="flex justify-center items-center gap-2">
-            <div>Admin ID:</div>
+            <div>ID:</div>
             <div>
-              <div v-if="connectionType != connectionTypes.connect">{{ adminId }}</div>
-              <ElInput v-else class="!min-w-[300px]" v-model="adminId" :minlength="2" :maxlength="36" />
+              <div>{{ clientId }}</div>
             </div>
           </div>
-          <Theme />
+          <div>
+            <ElTooltip class="box-item" effect="dark" content="Kopyala" placement="bottom-end">
+              <ElIcon @click.stop="copyClientId()" class="cursor-pointer"><CopyDocument /></ElIcon>
+            </ElTooltip>
+          </div>
         </div>
       </div>
-      <div class="w-full flex justify-center items-center">
-        <div class="w-[75%] h-full space-y-7 mt-20">
-          <div class="w-full flex justify-center items-center">
-            <ElUpload
-              v-model:file-list="selectedFile"
-              :auto-upload="false"
-              :limit="1"
-              :on-change="handleChange"
-              drag
-              class="w-full"
-            >
-              <ElIcon class="!text-6xl mb-4"><UploadFilled /></ElIcon>
-              <div class="text-center text-sm">
-                Dosyayı buraya sürükleyin veya
-                <em>yükleme ekranına tıklayın</em>
-              </div>
-              <template #tip>
-                <div>.bin dosyası yüklenebilir</div>
-              </template>
-            </ElUpload>
-          </div>
-          <ElButton
-            :disabled="!(connectionType == connectionTypes.connected && selectedFile.length != 0)"
-            class="w-full"
-            type="success"
-            size="large"
-            @click.left="sendFile()"
-          >
-            Dosyayı Gönder
-          </ElButton>
-        </div>
+      <div>
+        programlama işlemi başladı
+        <ElProgress :percentage="100" :stroke-width="15" status="success" striped striped-flow :duration="10" />
       </div>
     </div>
   </div>
@@ -83,27 +58,19 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, computed, ref } from 'vue'
 import type { Ref } from 'vue'
-import { ElNotification, ElIcon, ElUpload, ElInput, ElButton } from 'element-plus'
-import type { UploadFile, UploadFiles } from 'element-plus'
-import { UploadFilled, Loading, CircleCheck, Connection } from '@element-plus/icons-vue'
+import { ElNotification, ElIcon, ElProgress, ElButton, ElTooltip } from 'element-plus'
+import { Loading, CircleCheck, Connection, CopyDocument } from '@element-plus/icons-vue'
 import { useMQTT } from '@/composables/MQTT'
 import { connectionTypes } from '@/enums'
-import type { TConnectionTypes } from '@/types'
-import Theme from '@/components/Theme.vue'
+import { mqttTopics, type TConnectionTypes } from '@remote-uart/shared'
 
 const mqtt = useMQTT()
 
-const incomingMessage = ref()
+const incomingMessage: Ref<string | Buffer> = ref()
 const connectionStatus = ref(false)
 const connectionType: Ref<TConnectionTypes> = ref(connectionTypes.connect)
-const adminId = ref('')
-const selectedFile = ref([])
-const adminIdDisabled = ref(false)
-const adminIdLength = {
-  min: 4,
-  max: 36,
-}
-let uploadFileContent: Uint8Array = null
+const clientId: Ref<string> = ref(window.crypto.randomUUID())
+const localStorageClientIdKey: string = import.meta.env.VITE_CLIENT_ID
 
 const connectionTypeIcon = computed(() => {
   switch (connectionType.value) {
@@ -133,44 +100,24 @@ const connectionTypeIcon = computed(() => {
   }
 })
 
-function getAdminId() {
-  const localData = localStorage.getItem(import.meta.env.VITE_ADMIN_ID)
-
-  if (!localData) {
-    adminId.value = window.crypto.randomUUID()
-    localStorage.setItem(import.meta.env.VITE_ADMIN_ID, adminId.value)
-  } else {
-    adminId.value = localData
-  }
+function mqttConnectionStatusEvent(value: boolean) {
+  sendData(mqttTopics.admin.mqttConnectionStatus(clientId.value), value ? 'true' : 'false')
 }
 
-function connectionValidation() {
-  if (adminId.value.length < adminIdLength.min || adminId.value.length > adminIdLength.max) {
-    ElNotification({
-      type: 'warning',
-      message: 'Admin ID en az 4 en fazla 36 karakter olabilir',
-    })
-    return false
-  }
-
-  return true
+function uartStatusEvent(value: boolean) {
+  sendData(mqttTopics.admin.uartStatus(clientId.value), value ? 'true' : 'false')
 }
 
-async function handleChange(uploadFile: UploadFile, _uploadFiles: UploadFiles) {
-  uploadFileContent = await uploadFile.raw.bytes()
+function uartChannelEvent(channels: []) {
+  sendData(mqttTopics.admin.uartChannel(clientId.value), JSON.stringify(channels))
 }
 
-function sendFile() {
-  mqtt.getConnection().publish(adminId.value, uploadFileContent as Uint8Array as Buffer)
-  ElNotification({
-    type: 'success',
-    message: 'Dosya Gönderildi',
-  })
+function sendData(topic: string, data: string | Buffer) {
+  mqtt.getConnection().publish(topic, data)
 }
 
 function connectionClosedOperations() {
   connectionStatus.value = false
-  adminIdDisabled.value = false
   connectionType.value = connectionTypes.connect
 }
 
@@ -181,10 +128,6 @@ function closeConnection() {
 }
 
 function createConnection() {
-  if (!connectionValidation()) {
-    return
-  }
-
   connectionType.value = connectionTypes.connecting
 
   mqtt.connect()
@@ -192,8 +135,14 @@ function createConnection() {
 
   connection.on('connect', () => {
     connectionStatus.value = true
-    adminIdDisabled.value = true
     connectionType.value = connectionTypes.connected
+    connection.subscribe([
+      mqttTopics.client.mqttConnectionStatus(clientId.value),
+      mqttTopics.client.uartChannel(clientId.value),
+      mqttTopics.client.uartStatus(clientId.value),
+      mqttTopics.client.file(clientId.value),
+    ])
+
     ElNotification({
       type: 'success',
       message: 'Bağlantı Sağlandı',
@@ -201,10 +150,26 @@ function createConnection() {
   })
 
   connection.on('message', (_topic, _payload, packet) => {
-    incomingMessage.value = JSON.parse(packet.payload as string)
+    switch (packet.topic) {
+      case mqttTopics.client.mqttConnectionStatus(clientId.value):
+        mqttConnectionStatusEvent(true)
+        return
+
+      case mqttTopics.client.uartChannel(clientId.value):
+        uartChannelEvent([])
+        return
+
+      case mqttTopics.client.uartStatus(clientId.value):
+        uartStatusEvent(true)
+        return
+
+      case mqttTopics.client.file(clientId.value):
+        incomingMessage.value = packet.payload
+        return
+    }
   })
 
-  connection.on('offline', () => {
+  connection.on('close', () => {
     ElNotification({
       type: 'error',
       message: 'Bağlantı Kapandı',
@@ -223,8 +188,27 @@ function createConnection() {
   })
 }
 
+function copyClientId() {
+  window.navigator.clipboard.writeText(clientId.value)
+  ElNotification({
+    type: 'success',
+    message: 'ID Kopyalandı',
+  })
+}
+
+function setStartingOperations() {
+  const localData = localStorage.getItem(localStorageClientIdKey)
+
+  if (!localData) {
+    clientId.value = window.crypto.randomUUID()
+    localStorage.setItem(localStorageClientIdKey, clientId.value)
+  } else {
+    clientId.value = localData
+  }
+}
+
 onMounted(() => {
-  getAdminId()
+  setStartingOperations()
 })
 
 onBeforeUnmount(() => {
