@@ -41,7 +41,7 @@ function createWindow() {
   })
 
   // win.loadURL(path.join(__dirname, '../build/index.html'))
-  win.loadURL('http://localhost:5173')
+  win.loadURL('http://localhost:3000')
 
   win.webContents.openDevTools({
     mode: 'detach',

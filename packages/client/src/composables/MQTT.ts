@@ -10,7 +10,7 @@ export function useMQTT() {
   function connectHost() {
     return mqtt.connect(import.meta.env.VITE_MQTT_HOST, {
       clientId: localStorage.getItem(import.meta.env.VITE_ADMIN_ID),
-      reconnectPeriod: 0,
+      reconnectPeriod: 5000,
     })
   }
 

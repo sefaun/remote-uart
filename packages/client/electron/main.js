@@ -14,8 +14,8 @@ function createSplashWindow() {
     center: true,
     resizable: false,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
+      nodeIntegration: true,
+      contextIsolation: false,
     },
   })
 
@@ -36,12 +36,12 @@ function createWindow() {
       devTools: true,
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
-      contextIsolation: true,
+      contextIsolation: false,
     },
   })
 
   // win.loadURL(path.join(__dirname, '../build/index.html'))
-  win.loadURL('http://localhost:5173')
+  win.loadURL('http://localhost:3001')
 
   win.webContents.openDevTools({
     mode: 'detach',

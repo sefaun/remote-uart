@@ -1,5 +1,7 @@
 <template>
-  <div>asda</div>
+  <FileUpload />
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import FileUpload from '@/components/FileUpload.vue'
+</script>

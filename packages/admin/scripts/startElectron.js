@@ -26,7 +26,7 @@ const setCommonJSProcess = exec('npm run set-commonjs', { cwd: packageJsonDir },
 
   electronProcess = exec('electron .', { cwd: packageJsonDir })
 
-  //Pencereden kapapatma işleminde çalışır.
+  //Pencereden kapatma işleminde çalışır.
   electronProcess.on('exit', async (code) => {
     if (code != 0) {
       console.error(`Electron process exited with code ${code}`)

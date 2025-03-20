@@ -55,6 +55,18 @@
         </div>
       </div>
       <div class="w-full flex justify-center items-center">
+        <div>
+          <ElButton type="info" size="small" :disabled="!connectionStatus" @click.left="checkUARTConnection()">
+            UART Bağlantısını Kontrol Et
+          </ElButton>
+          <div>{{ uartConnectionStatus }}</div>
+        </div>
+        <div>
+          <ElButton type="info" size="small" :disabled="!connectionStatus" @click.left="checkUARTOptions()">
+            UART Ayarlarını Kontrol et
+          </ElButton>
+          <div>{{ uartConnectionOptions }}</div>
+        </div>
         <div class="w-[75%] h-full space-y-7 mt-20">
           <div class="flex justify-center items-center flex-wrap gap-2">
             <div class="flex items-center gap-2">
@@ -145,7 +157,7 @@ import {
   CircleClose,
   Refresh,
 } from '@element-plus/icons-vue'
-import { mqttTopics } from '@remote-uart/shared'
+import { isJSON, mqttTopics } from '@remote-uart/shared'
 import { useMQTT } from '@/composables/MQTT'
 import { useMqttClient } from '@/composables/MqttClient'
 import { connectionTypes } from '@/enums'
@@ -160,6 +172,8 @@ const connectionType: Ref<TConnectionTypes> = ref(connectionTypes.connect)
 const adminId = ref('')
 const clientId = ref('')
 const selectedFile = ref([])
+const uartConnectionStatus = ref(false)
+const uartConnectionOptions = ref({})
 const adminIdDisabled = ref(false)
 const clientConnectionStatus = ref(false)
 const localStorageAdminIdKey: string = import.meta.env.VITE_ADMIN_ID
@@ -266,7 +280,7 @@ function createConnection() {
     mqttClient.checkClientMqttConnectionStatus(clientId.value)
     connection.subscribe([
       mqttTopics.admin.mqttConnectionStatus(clientId.value),
-      mqttTopics.admin.uartChannel(clientId.value),
+      mqttTopics.admin.uartChannelOptions(clientId.value),
       mqttTopics.admin.uartStatus(clientId.value),
     ])
     ElNotification({
@@ -281,11 +295,11 @@ function createConnection() {
         mqttClient.setConnectionControl(false)
         clientConnectionStatus.value = true
         return
-      case mqttTopics.admin.uartChannel(clientId.value):
-        //
+      case mqttTopics.admin.uartChannelOptions(clientId.value):
+        uartConnectionOptions.value = isJSON(packet.payload.toString()) ? JSON.parse(packet.payload.toString()) : {}
         return
       case mqttTopics.admin.uartStatus(clientId.value):
-        //
+        uartConnectionStatus.value = packet.payload.toString() == 'true'
         return
     }
   })
@@ -312,6 +326,14 @@ function createConnection() {
 function manuelClientConnectionCheck() {
   mqttClient.setConnectionControl(true)
   mqtt.getConnection().publish(mqttTopics.client.mqttConnectionStatus(clientId.value), 'ping')
+}
+
+function checkUARTConnection() {
+  mqtt.getConnection().publish(mqttTopics.client.uartStatus(clientId.value), '')
+}
+
+function checkUARTOptions() {
+  mqtt.getConnection().publish(mqttTopics.client.uartChannelOptions(clientId.value), '')
 }
 
 function copyClientId() {
@@ -343,6 +365,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  mqtt.closeConnection(true)
+  closeConnection()
 })
 </script>
