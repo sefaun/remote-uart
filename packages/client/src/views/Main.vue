@@ -39,7 +39,24 @@
         </div>
       </div>
       <div class="w-full">
-        <ElButton type="info" size="small" @click.left="setUartOptionsDialog(true)">UART Ayarları</ElButton>
+        <div>UART Bağlantı Durumu: {{ serialPort.getSerialConnectionStatus() }}</div>
+        <ElButton
+          :disabled="serialPort.getSerialConnectionStatus()"
+          @click.left="createSerialConnection()"
+          type="success"
+          size="small"
+        >
+          Bağlan
+        </ElButton>
+        <ElButton
+          :disabled="!serialPort.getSerialConnectionStatus()"
+          @click.left="closeSerialConnection()"
+          type="danger"
+          size="small"
+        >
+          Bağlan Kapat
+        </ElButton>
+        <ElButton @click.left="setUartOptionsDialog(true)" type="info" size="small">UART Ayarları</ElButton>
       </div>
       <div>
         programlama işlemi başladı
@@ -48,7 +65,7 @@
     </div>
   </div>
   <ElDialog v-model="uartOptionsDialog" title="UART Ayarları" width="300px">
-    <SerialPort v-if="uartOptionsDialog" @close="setUartOptionsDialog(false)"></SerialPort>
+    <SerialPort v-if="uartOptionsDialog" @close="closeUartOptionsDialog()"></SerialPort>
   </ElDialog>
 </template>
 
@@ -148,7 +165,7 @@ function createConnection() {
 
     ElNotification({
       type: 'success',
-      message: 'Bağlantı Sağlandı',
+      message: 'Server Bağlantısı Sağlandı',
     })
   })
 
@@ -175,7 +192,7 @@ function createConnection() {
   connection.on('close', () => {
     ElNotification({
       type: 'error',
-      message: 'Bağlantı Kapandı',
+      message: 'Server Bağlantısı Kapandı',
     })
     connectionClosedOperations()
   })
@@ -191,12 +208,44 @@ function createConnection() {
   })
 }
 
+function serialConnectionValidation() {
+  if (!serialPort.getPortSettings().path) {
+    ElNotification({
+      type: 'error',
+      message: 'Port Seçilmedi',
+    })
+    return false
+  }
+
+  return true
+}
+
+function closeSerialConnection() {
+  serialPort.closeSerialPort()
+}
+
+function createSerialConnection() {
+  if (!serialConnectionValidation()) {
+    return
+  }
+
+  serialPort.createSerialPort({
+    path: serialPort.getPortSettings().path,
+  })
+}
+
 function copyClientId() {
   window.navigator.clipboard.writeText(clientId.value)
   ElNotification({
     type: 'success',
     message: 'ID Kopyalandı',
   })
+}
+
+function closeUartOptionsDialog() {
+  setUartOptionsDialog(false)
+  uartChannelOptionsEvent()
+  serialPort.closeSerialPort()
 }
 
 function setUartOptionsDialog(value: boolean) {

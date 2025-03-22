@@ -31,6 +31,10 @@ export function useSerialPort() {
     return serialPortSettings.value
   }
 
+  function getSerialConnectionStatus() {
+    return serialConnectionStatus.value
+  }
+
   function setSerialConnectionStatus(value: boolean) {
     serialConnectionStatus.value = value
   }
@@ -42,7 +46,7 @@ export function useSerialPort() {
 
   function createSerialPort(options: TSerialPortOpenOptions) {
     serialConnection.value = new SerialPort({
-      path: 'COM1',
+      path: getPortSettings(),
       baudRate: 9600,
       parity: 'even',
       dataBits: 8,
@@ -51,6 +55,7 @@ export function useSerialPort() {
       ...options,
     })
 
+    //bağlantı sağlandığında burası çalışır
     serialConnection.value.on('open', () => {
       setSerialConnectionStatus(true)
     })
@@ -59,7 +64,9 @@ export function useSerialPort() {
       setSerialConnectionStatus(false)
     })
     //karşıdan gelen verileri alır
-    serialConnection.value.on('data', (_data: any) => {})
+    serialConnection.value.on('data', (data: any) => {
+      console.log(data, 'serial veri')
+    })
     //Bağlantı sağlanamazsa burası çalışır
     serialConnection.value.on('error', (_err: Error) => {
       setSerialConnectionStatus(false)
@@ -76,6 +83,7 @@ export function useSerialPort() {
           }
 
           serialConnection.value = null
+          setSerialConnectionStatus(false)
           return resolve(true)
         })
       }
@@ -95,6 +103,8 @@ export function useSerialPort() {
   return {
     getActivePorts,
     getPortSettings,
+    getSerialConnectionStatus,
+    setSerialConnectionStatus,
     setPortSettings,
     createSerialPort,
     closeSerialPort,
