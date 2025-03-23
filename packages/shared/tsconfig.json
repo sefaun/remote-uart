@@ -13,7 +13,7 @@
     "strictNullChecks": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["ESNext"]
+    "lib": ["ESNext", "DOM"]
   },
   "ts-node": {
     "esm": true

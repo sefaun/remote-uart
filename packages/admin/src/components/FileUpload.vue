@@ -127,10 +127,33 @@
                     <div>{{ uartConnectionStatus ? 'Bağlı' : 'Bağlı Değil' }}</div>
                   </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="space-y-1 mt-2">
                   <div class="font-bold">Bağlantı Bilgileri:</div>
-                  <div>
-                    {{ uartConnectionOptions }}
+                  <div v-if="isObject(uartConnectionOptions)" class="text-sm">
+                    <div class="flex items-center gap-1">
+                      <div class="font-bold">COM:</div>
+                      <div>{{ uartConnectionOptions?.path }}</div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <div class="font-bold">Baudrate:</div>
+                      <div>{{ uartConnectionOptions?.baudRate }}</div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <div class="font-bold">Parity:</div>
+                      <div>{{ uartConnectionOptions?.parity }}</div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <div class="font-bold">Stopbits:</div>
+                      <div>{{ uartConnectionOptions?.stopBits }}</div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <div class="font-bold">Databits:</div>
+                      <div>{{ uartConnectionOptions?.dataBits }}</div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <div class="font-bold">Flow Kontrol:</div>
+                      <div>{{ uartConnectionOptions?.flowControl }}</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -171,39 +194,38 @@
             </div>
           </ElTabPane>
           <ElTabPane label="Komut">
-            <div class="w-[500px] space-y-3">
-              <div class="flex items-center gap-2">
-                <ElInput
-                  v-model="command"
-                  :placeholder="commandType == commandTypes.hex ? 'Örnek: 020304050608' : 'Örnek: Merhaba'"
-                  class="mt-1"
-                >
-                  <template #append>
-                    <ElSelect v-model="commandType" class="!w-24">
-                      <ElOption v-for="item of commandTypes" :label="item" :value="item" />
-                    </ElSelect>
-                  </template>
-                </ElInput>
-                <ElButton :icon="Position" @click.left="sendCommand()" type="success">Gönder</ElButton>
+            <div>
+              <div class="w-[500px] space-y-3">
+                <div class="flex items-center gap-2">
+                  <ElInput
+                    v-model="command"
+                    :placeholder="commandType == commandTypes.hex ? 'Örnek: 020304050608' : 'Örnek: Merhaba'"
+                    class="mt-1"
+                  >
+                    <template #append>
+                      <ElSelect v-model="commandType" class="!w-24">
+                        <ElOption v-for="item of commandTypes" :label="item" :value="item" />
+                      </ElSelect>
+                    </template>
+                  </ElInput>
+                  <ElButton :icon="Position" @click.left="sendCommand()" type="success">Gönder</ElButton>
+                </div>
               </div>
-              <div>
-                <div class="font-bold">Gelen Cevap</div>
-                <div class="flex items-center gap-1">
-                  <div class="font-bold">Zaman:</div>
-                  <div>
-                    {{ uartCommandResponse?.time }}
+              <div class="mt-2">
+                <div class="flex justify-between items-center gap-2">
+                  <div class="font-bold">Gelen Cevaplar</div>
+                  <div class="flex items-center gap-2">
+                    <ElButton :icon="Delete" @click.left="clearUartCommandResponses()" type="danger" size="small">
+                      Temizle
+                    </ElButton>
                   </div>
                 </div>
-                <div class="flex items-center gap-1">
-                  <div class="font-bold">Tip:</div>
-                  <div>
-                    {{ uartCommandResponse?.type }}
-                  </div>
-                </div>
-                <div class="flex items-center gap-1">
-                  <div class="font-bold">Cevap:</div>
-                  <div>
-                    {{ uartCommandResponse?.command }}
+                <div class="w-full h-[350px] overflow-y-auto border rounded space-y-1 p-1 mt-2">
+                  <div v-for="command of uartCommandResponses" class="flex items-center gap-1 text-sm">
+                    <div class="font-bold">{{ command.time }} - {{ command.type }}:</div>
+                    <div>
+                      {{ command.command }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -239,9 +261,10 @@ import {
   CircleClose,
   Refresh,
   Position,
+  Delete,
 } from '@element-plus/icons-vue'
-import { isJSON, mqttTopics, connectionTypes, commandTypes } from '@remote-uart/shared'
-import type { TCommandTypes, TConnectionTypes, TUartCommand } from '@remote-uart/shared'
+import { isJSON, isObject, mqttTopics, connectionTypes, commandTypes } from '@remote-uart/shared'
+import type { TCommandTypes, TConnectionTypes, TUartCommand, TSerialPortOptions } from '@remote-uart/shared'
 import { useMQTT } from '@/composables/MQTT'
 import { useMqttClient } from '@/composables/MqttClient'
 
@@ -251,6 +274,7 @@ const mqttClient = useMqttClient()
 const connectionStatus = ref(false)
 const connectionType: Ref<TConnectionTypes> = ref(connectionTypes.notConnected)
 const uartCommandResponse: Ref<TUartCommand> = ref()
+const uartCommandResponses: Ref<TUartCommand[]> = ref([])
 const adminId = ref('')
 const clientId = ref('')
 const command = ref('')
@@ -258,7 +282,7 @@ const commandType: Ref<TCommandTypes> = ref(commandTypes.hex)
 const uartConnectionStatus = ref(false)
 const adminIdDisabled = ref(false)
 const clientConnectionStatus = ref(false)
-const uartConnectionOptions = ref({})
+const uartConnectionOptions: Ref<TSerialPortOptions> = ref()
 const selectedFile = ref([])
 const localStorageAdminIdKey: string = import.meta.env.VITE_ADMIN_ID
 const localStorageClientIdKey: string = import.meta.env.VITE_CLIENT_ID
@@ -489,6 +513,10 @@ function checkUARTOptions() {
 function checkAllClientUARTOptions() {
   checkUARTConnection()
   checkUARTOptions()
+}
+
+function clearUartCommandResponses() {
+  uartCommandResponses.value = []
 }
 
 function copyClientId() {

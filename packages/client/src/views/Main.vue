@@ -63,23 +63,20 @@
           <ElTabs class="w-full">
             <ElTabPane label="Komut">
               <div>
-                <div class="font-bold">Gelen Komut</div>
-                <div class="flex items-center gap-1">
-                  <div class="font-bold">Zaman:</div>
-                  <div>
-                    {{ incomingCommand?.time }}
+                <div class="flex justify-between items-center gap-2">
+                  <div class="font-bold">Gelen Komutlar</div>
+                  <div class="flex items-center gap-2">
+                    <ElButton :icon="Delete" @click.left="clearIncomingCommands()" type="danger" size="small">
+                      Temizle
+                    </ElButton>
                   </div>
                 </div>
-                <div class="flex items-center gap-1">
-                  <div class="font-bold">Tip:</div>
-                  <div>
-                    {{ incomingCommand?.type }}
-                  </div>
-                </div>
-                <div class="flex items-center gap-1">
-                  <div class="font-bold">Admin Komut:</div>
-                  <div>
-                    {{ incomingCommand?.command }}
+                <div class="w-full h-[400px] overflow-y-auto border rounded space-y-1 p-1 mt-2">
+                  <div v-for="command of incomingCommands" class="flex items-center gap-1 text-sm">
+                    <div class="font-bold">{{ command.time }} - {{ command.type }}:</div>
+                    <div>
+                      {{ command.command }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -102,7 +99,7 @@
 import { onBeforeUnmount, onMounted, computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { ElNotification, ElIcon, ElProgress, ElButton, ElTooltip, ElDialog, ElTabs, ElTabPane } from 'element-plus'
-import { Loading, CircleCheck, CopyDocument, CircleClose } from '@element-plus/icons-vue'
+import { Loading, CircleCheck, CopyDocument, CircleClose, Delete } from '@element-plus/icons-vue'
 import { commandTypes, mqttTopics, stringHexToBuffer } from '@remote-uart/shared'
 import type { TConnectionTypes, TUartCommand } from '@remote-uart/shared'
 import { useSerialPort } from '@/composables/SerialPort'
@@ -116,6 +113,7 @@ const mqtt = useMQTT()
 const uartOptionsDialog = ref(false)
 const incomingMessage: Ref<string | Buffer> = ref()
 const incomingCommand: Ref<TUartCommand> = ref()
+const incomingCommands: Ref<TUartCommand[]> = ref([])
 const connectionStatus = ref(false)
 const connectionType: Ref<TConnectionTypes> = ref(connectionTypes.notConnected)
 const clientId: Ref<string> = ref(window.crypto.randomUUID())
@@ -216,6 +214,8 @@ function createConnection() {
 
       case mqttTopics.client.uartCommand(clientId.value):
         incomingCommand.value = JSON.parse(packet.payload.toString()) as TUartCommand
+        incomingCommands.value.push(incomingCommand.value)
+
         if (serialPort.checkConnection()) {
           serialPort.sendData(
             incomingCommand.value.type == commandTypes.hex
@@ -292,6 +292,10 @@ function closeUartOptionsDialog() {
 
 function setUartOptionsDialog(value: boolean) {
   uartOptionsDialog.value = value
+}
+
+function clearIncomingCommands() {
+  incomingCommands.value = []
 }
 
 function setStartingOperations() {

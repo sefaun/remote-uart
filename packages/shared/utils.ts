@@ -11,6 +11,10 @@ export function isJSON(value: any): boolean {
   }
 }
 
+export function isObject(value: any): boolean {
+  return toString.call(value) == '[object Object]'
+}
+
 //'buffer' -> 627566666572
 export function stringToHex(value: string): string {
   return Buffer.from(value).toString('hex')

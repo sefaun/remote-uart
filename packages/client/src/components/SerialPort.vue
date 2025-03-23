@@ -78,10 +78,9 @@ import { onMounted, ref } from 'vue'
 import type { Ref } from 'vue'
 import { ElButton, ElSelect, ElOption } from 'element-plus'
 import { Check, Refresh } from '@element-plus/icons-vue'
-import { cloneDeep } from '@remote-uart/shared'
+import { cloneDeep, baudRate, dataBits, flowControl, parity, stopBits } from '@remote-uart/shared'
+import type { TActiveSerialPortsPayload } from '@remote-uart/shared'
 import { useSerialPort } from '@/composables/SerialPort'
-import { baudRate, dataBits, flowControl, parity, stopBits } from '@/enums'
-import type { TActiveSerialPortsPayload } from '@/types'
 
 const emit = defineEmits<{
   (e: 'close'): void
