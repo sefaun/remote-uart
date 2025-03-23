@@ -38,29 +38,58 @@
           </div>
         </div>
       </div>
-      <div class="w-full">
-        <div>UART Bağlantı Durumu: {{ serialPort.getSerialConnectionStatus() }}</div>
-        <ElButton
-          :disabled="serialPort.getSerialConnectionStatus()"
-          @click.left="createSerialConnection()"
-          type="success"
-          size="small"
-        >
-          Bağlan
-        </ElButton>
-        <ElButton
-          :disabled="!serialPort.getSerialConnectionStatus()"
-          @click.left="closeSerialConnection()"
-          type="danger"
-          size="small"
-        >
-          Bağlan Kapat
-        </ElButton>
-        <ElButton @click.left="setUartOptionsDialog(true)" type="info" size="small">UART Ayarları</ElButton>
-      </div>
-      <div>
-        programlama işlemi başladı
-        <ElProgress :percentage="100" :stroke-width="15" status="success" striped striped-flow :duration="10" />
+      <div class="w-full p-3">
+        <div>
+          <div>UART Bağlantı Durumu: {{ serialPort.getSerialConnectionStatus() }}</div>
+          <ElButton
+            :disabled="serialPort.getSerialConnectionStatus()"
+            @click.left="createSerialConnection()"
+            type="success"
+            size="small"
+          >
+            Bağlan
+          </ElButton>
+          <ElButton
+            :disabled="!serialPort.getSerialConnectionStatus()"
+            @click.left="closeSerialConnection()"
+            type="danger"
+            size="small"
+          >
+            Bağlan Kapat
+          </ElButton>
+          <ElButton @click.left="setUartOptionsDialog(true)" type="info" size="small">UART Ayarları</ElButton>
+        </div>
+        <div class="w-full flex justify-center mt-2">
+          <ElTabs class="w-full">
+            <ElTabPane label="Komut">
+              <div>
+                <div class="font-bold">Gelen Komut</div>
+                <div class="flex items-center gap-1">
+                  <div class="font-bold">Zaman:</div>
+                  <div>
+                    {{ incomingCommand?.time }}
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="font-bold">Tip:</div>
+                  <div>
+                    {{ incomingCommand?.type }}
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="font-bold">Admin Komut:</div>
+                  <div>
+                    {{ incomingCommand?.command }}
+                  </div>
+                </div>
+              </div>
+            </ElTabPane>
+            <ElTabPane label="Dosya">
+              programlama işlemi başladı
+              <ElProgress :percentage="100" :stroke-width="15" status="success" striped striped-flow :duration="10" />
+            </ElTabPane>
+          </ElTabs>
+        </div>
       </div>
     </div>
   </div>
@@ -72,10 +101,10 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, computed, ref } from 'vue'
 import type { Ref } from 'vue'
-import { ElNotification, ElIcon, ElProgress, ElButton, ElTooltip, ElDialog } from 'element-plus'
+import { ElNotification, ElIcon, ElProgress, ElButton, ElTooltip, ElDialog, ElTabs, ElTabPane } from 'element-plus'
 import { Loading, CircleCheck, CopyDocument, CircleClose } from '@element-plus/icons-vue'
-import { mqttTopics } from '@remote-uart/shared'
-import type { TConnectionTypes } from '@remote-uart/shared'
+import { commandTypes, mqttTopics, stringHexToBuffer } from '@remote-uart/shared'
+import type { TConnectionTypes, TUartCommand } from '@remote-uart/shared'
 import { useSerialPort } from '@/composables/SerialPort'
 import { useMQTT } from '@/composables/MQTT'
 import { connectionTypes } from '@/enums'
@@ -86,6 +115,7 @@ const mqtt = useMQTT()
 
 const uartOptionsDialog = ref(false)
 const incomingMessage: Ref<string | Buffer> = ref()
+const incomingCommand: Ref<TUartCommand> = ref()
 const connectionStatus = ref(false)
 const connectionType: Ref<TConnectionTypes> = ref(connectionTypes.notConnected)
 const clientId: Ref<string> = ref(window.crypto.randomUUID())
@@ -160,6 +190,7 @@ function createConnection() {
       mqttTopics.client.mqttConnectionStatus(clientId.value),
       mqttTopics.client.uartChannelOptions(clientId.value),
       mqttTopics.client.uartStatus(clientId.value),
+      mqttTopics.client.uartCommand(clientId.value),
       mqttTopics.client.file(clientId.value),
     ])
 
@@ -181,6 +212,17 @@ function createConnection() {
 
       case mqttTopics.client.uartStatus(clientId.value):
         uartStatusEvent(serialPort.checkConnection())
+        return
+
+      case mqttTopics.client.uartCommand(clientId.value):
+        incomingCommand.value = JSON.parse(packet.payload.toString()) as TUartCommand
+        if (serialPort.checkConnection()) {
+          serialPort.sendData(
+            incomingCommand.value.type == commandTypes.hex
+              ? stringHexToBuffer(incomingCommand.value.command)
+              : incomingCommand.value.command
+          )
+        }
         return
 
       case mqttTopics.client.file(clientId.value):

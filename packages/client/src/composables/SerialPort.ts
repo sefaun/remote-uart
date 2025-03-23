@@ -94,7 +94,7 @@ export function useSerialPort() {
     return serialConnection.value?.isOpen || false
   }
 
-  function sendData(data: Buffer) {
+  function sendData(data: string | Buffer) {
     if (serialConnection.value && serialConnection.value.isOpen) {
       serialConnection.value.write(data + '\r\n')
     }

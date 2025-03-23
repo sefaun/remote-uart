@@ -15,20 +15,20 @@
             </div>
           </div>
           <ElButton
-            type="success"
-            size="small"
             :loading="connectionType == connectionTypes.connecting"
             :disabled="connectionStatus"
             @click.left="createConnection()"
+            type="success"
+            size="small"
           >
             Bağlan
           </ElButton>
           <ElButton
-            type="danger"
-            size="small"
             :loading="connectionType == connectionTypes.connectionClosing"
             :disabled="!connectionStatus"
             @click.left="closeConnection()"
+            type="danger"
+            size="small"
           >
             Bağlantı Kapat
           </ElButton>
@@ -40,10 +40,10 @@
               <div v-if="connectionType != connectionTypes.notConnected">{{ adminId }}</div>
               <ElInput
                 v-else
-                class="!min-w-[300px]"
                 v-model="adminId"
                 :minlength="adminIdLength.min"
                 :maxlength="adminIdLength.max"
+                class="!min-w-[300px]"
               />
             </div>
           </div>
@@ -54,9 +54,31 @@
           </div>
         </div>
       </div>
-      <div class="w-full flex justify-center items-center mt-4">
+      <div class="w-full flex justify-center items-center">
         <div>
-          <div class="flex justify-center items-center flex-wrap gap-2">
+          <div v-if="connectionType == connectionTypes.connected" class="flex justify-center items-center gap-2 mt-3">
+            <div v-if="mqttClient.getConnectionControl()">
+              <div class="flex items-center gap-2">
+                <div class="flex items-center">
+                  <ElIcon color="orange">
+                    <Loading />
+                  </ElIcon>
+                </div>
+                <div>Bağlantı Kontrol Ediliyor</div>
+              </div>
+            </div>
+            <div v-else>
+              <div class="flex items-center gap-2">
+                <div class="flex items-center">
+                  <ElIcon :color="clientMqttConnection ? 'green' : 'red'">
+                    <component :is="clientMqttConnection ? CircleCheck : CircleClose" />
+                  </ElIcon>
+                </div>
+                <div>{{ clientMqttConnection ? 'Bağlı' : 'Bağlı Değil' }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-center items-center flex-wrap gap-2 mt-3">
             <div class="w-full flex items-center gap-2">
               <div>Client ID:</div>
               <div>
@@ -67,52 +89,28 @@
               </div>
               <div v-if="connectionType == connectionTypes.connected" class="flex justify-center items-center">
                 <ElButton
-                  type="info"
                   :icon="Refresh"
                   :loading="mqttClient.getConnectionControl()"
                   @click.left="manuelClientConnectionCheck()"
+                  type="info"
                 >
                   Client Bağlantı Kontrolü
                 </ElButton>
               </div>
             </div>
           </div>
-          <div class="mt-3">
-            <div v-if="connectionType == connectionTypes.connected" class="flex justify-center items-center gap-2 mt-3">
-              <div v-if="mqttClient.getConnectionControl()">
-                <div class="flex items-center gap-2">
-                  <div class="flex items-center">
-                    <ElIcon color="orange">
-                      <Loading />
-                    </ElIcon>
-                  </div>
-                  <div>Bağlantı Kontrol Ediliyor</div>
-                </div>
-              </div>
-              <div v-else>
-                <div class="flex items-center gap-2">
-                  <div class="flex items-center">
-                    <ElIcon :color="clientMqttConnection ? 'green' : 'red'">
-                      <component :is="clientMqttConnection ? CircleCheck : CircleClose" />
-                    </ElIcon>
-                  </div>
-                  <div>{{ clientMqttConnection ? 'Bağlı' : 'Bağlı Değil' }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
-      <div class="w-full flex justify-center items-center p-3">
+      <div class="w-full flex justify-center p-3">
         <ElTabs class="w-full">
           <ElTabPane label="Client UART">
             <div class="w-full gap-3">
               <div>
                 <ElButton
-                  type="info"
-                  size="small"
                   :disabled="!connectionStatus"
                   @click.left="checkAllClientUARTOptions()"
+                  type="info"
+                  size="small"
                 >
                   UART Bilgilerini Kontrol Et
                 </ElButton>
@@ -162,17 +160,55 @@
                 </div>
                 <ElButton
                   :disabled="!(connectionType == connectionTypes.connected && selectedFile.length != 0)"
+                  @click.left="sendFile()"
                   class="w-full"
                   type="success"
                   size="large"
-                  @click.left="sendFile()"
                 >
                   Dosyayı Gönder
                 </ElButton>
               </div>
             </div>
           </ElTabPane>
-          <ElTabPane label="Komut">Komut</ElTabPane>
+          <ElTabPane label="Komut">
+            <div class="w-[500px] space-y-3">
+              <div class="flex items-center gap-2">
+                <ElInput
+                  v-model="command"
+                  :placeholder="commandType == commandTypes.hex ? 'Örnek: 020304050608' : 'Örnek: Merhaba'"
+                  class="mt-1"
+                >
+                  <template #append>
+                    <ElSelect v-model="commandType" class="!w-24">
+                      <ElOption v-for="item of commandTypes" :label="item" :value="item" />
+                    </ElSelect>
+                  </template>
+                </ElInput>
+                <ElButton :icon="Position" @click.left="sendCommand()" type="success">Gönder</ElButton>
+              </div>
+              <div>
+                <div class="font-bold">Gelen Cevap</div>
+                <div class="flex items-center gap-1">
+                  <div class="font-bold">Zaman:</div>
+                  <div>
+                    {{ uartCommandResponse?.time }}
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="font-bold">Tip:</div>
+                  <div>
+                    {{ uartCommandResponse?.type }}
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="font-bold">Cevap:</div>
+                  <div>
+                    {{ uartCommandResponse?.command }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ElTabPane>
         </ElTabs>
       </div>
     </div>
@@ -182,27 +218,48 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, computed, ref } from 'vue'
 import type { Ref } from 'vue'
-import { ElNotification, ElIcon, ElUpload, ElInput, ElButton, ElTooltip, ElTabs, ElTabPane } from 'element-plus'
+import {
+  ElNotification,
+  ElIcon,
+  ElUpload,
+  ElInput,
+  ElButton,
+  ElTooltip,
+  ElTabs,
+  ElTabPane,
+  ElSelect,
+  ElOption,
+} from 'element-plus'
 import type { UploadFile, UploadFiles } from 'element-plus'
-import { UploadFilled, Loading, CircleCheck, CopyDocument, CircleClose, Refresh } from '@element-plus/icons-vue'
-import { isJSON, mqttTopics, connectionTypes } from '@remote-uart/shared'
-import type { TConnectionTypes } from '@remote-uart/shared'
+import {
+  UploadFilled,
+  Loading,
+  CircleCheck,
+  CopyDocument,
+  CircleClose,
+  Refresh,
+  Position,
+} from '@element-plus/icons-vue'
+import { isJSON, mqttTopics, connectionTypes, commandTypes } from '@remote-uart/shared'
+import type { TCommandTypes, TConnectionTypes, TUartCommand } from '@remote-uart/shared'
 import { useMQTT } from '@/composables/MQTT'
 import { useMqttClient } from '@/composables/MqttClient'
 
 const mqtt = useMQTT()
 const mqttClient = useMqttClient()
 
-const incomingMessage = ref()
 const connectionStatus = ref(false)
 const connectionType: Ref<TConnectionTypes> = ref(connectionTypes.notConnected)
+const uartCommandResponse: Ref<TUartCommand> = ref()
 const adminId = ref('')
 const clientId = ref('')
-const selectedFile = ref([])
+const command = ref('')
+const commandType: Ref<TCommandTypes> = ref(commandTypes.hex)
 const uartConnectionStatus = ref(false)
-const uartConnectionOptions = ref({})
 const adminIdDisabled = ref(false)
 const clientConnectionStatus = ref(false)
+const uartConnectionOptions = ref({})
+const selectedFile = ref([])
 const localStorageAdminIdKey: string = import.meta.env.VITE_ADMIN_ID
 const localStorageClientIdKey: string = import.meta.env.VITE_CLIENT_ID
 let uploadFileContent: Uint8Array = null
@@ -247,23 +304,6 @@ const clientMqttConnection = computed(
   () => connectionType.value == connectionTypes.connected && clientConnectionStatus.value
 )
 
-const clientUartConnection = computed(() => {
-  switch (connectionType.value) {
-    case connectionTypes.notConnected:
-      return {
-        is: CircleClose,
-        name: 'Bağlı Değil',
-        color: 'red',
-      }
-    case connectionTypes.connected:
-      return {
-        is: CircleCheck,
-        name: 'Bağlı',
-        color: 'green',
-      }
-  }
-})
-
 function connectionValidation() {
   if (adminId.value.length < adminIdLength.min || adminId.value.length > adminIdLength.max) {
     ElNotification({
@@ -282,6 +322,57 @@ function connectionValidation() {
   }
 
   return true
+}
+
+function sendCommandValidation() {
+  if (command.value.length == 0) {
+    ElNotification({
+      type: 'warning',
+      message: 'Komut boş olamaz',
+    })
+    return false
+  }
+
+  if (commandType.value == commandTypes.hex && command.value.length % 2 != 0) {
+    ElNotification({
+      type: 'warning',
+      message: 'Komut uzunluğu çift sayı olmalıdır',
+    })
+    return false
+  }
+
+  if (commandType.value == commandTypes.hex && !/^[0-9a-fA-F]+$/.test(command.value)) {
+    ElNotification({
+      type: 'warning',
+      message: 'Komut sadece hexadecimal karakterlerden oluşabilir',
+    })
+    return false
+  }
+
+  if (commandType.value == commandTypes.string && command.value.length > 255) {
+    ElNotification({
+      type: 'warning',
+      message: 'Komut 255 karakterden uzun olamaz',
+    })
+    return false
+  }
+
+  return true
+}
+
+function sendCommand() {
+  if (!sendCommandValidation()) {
+    return
+  }
+
+  mqtt.getConnection().publish(
+    mqttTopics.client.uartCommand(clientId.value),
+    JSON.stringify({
+      type: commandType.value,
+      command: command.value,
+      time: new Date().toLocaleString(),
+    } as TUartCommand)
+  )
 }
 
 async function handleChange(uploadFile: UploadFile, _uploadFiles: UploadFiles) {
@@ -329,6 +420,7 @@ function createConnection() {
       mqttTopics.admin.mqttConnectionStatus(clientId.value),
       mqttTopics.admin.uartChannelOptions(clientId.value),
       mqttTopics.admin.uartStatus(clientId.value),
+      mqttTopics.admin.uartCommand(clientId.value),
     ])
 
     ElNotification({
@@ -347,11 +439,17 @@ function createConnection() {
         mqttClient.setConnectionControl(false)
         clientConnectionStatus.value = true
         return
+
       case mqttTopics.admin.uartChannelOptions(clientId.value):
         uartConnectionOptions.value = isJSON(packet.payload.toString()) ? JSON.parse(packet.payload.toString()) : {}
         return
+
       case mqttTopics.admin.uartStatus(clientId.value):
         uartConnectionStatus.value = packet.payload.toString() == 'true'
+        return
+
+      case mqttTopics.admin.uartCommand(clientId.value):
+        uartCommandResponse.value = isJSON(packet.payload.toString()) ? JSON.parse(packet.payload.toString()) : {}
         return
     }
   })
