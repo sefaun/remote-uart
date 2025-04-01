@@ -37,3 +37,12 @@ export type TActiveSerialPortsPayload = {
   vendorId: string
   productId: string
 }
+
+export type TSerialPortOpenOptions = {
+  path: string
+  baudRate?: number
+  parity?: string
+  dataBits?: number
+  stopBits?: number
+  rtscts?: boolean
+}

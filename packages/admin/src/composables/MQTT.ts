@@ -6,6 +6,8 @@ const mqttConnection: Ref<mqtt.MqttClient> = ref()
 
 export function useMQTT() {
   function connect() {
+    closeConnection(true)
+    mqttConnection.value = null
     mqttConnection.value = mqtt.connect(import.meta.env.VITE_MQTT_HOST, {
       clientId: localStorage.getItem(import.meta.env.VITE_ADMIN_ID),
       reconnectPeriod: 0,
@@ -15,7 +17,9 @@ export function useMQTT() {
   }
 
   function closeConnection(force: boolean) {
-    mqttConnection.value.end(force)
+    if (mqttConnection.value) {
+      mqttConnection.value.end(force)
+    }
   }
 
   function getConnection() {

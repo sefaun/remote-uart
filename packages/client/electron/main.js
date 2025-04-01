@@ -1,7 +1,6 @@
 const { app, BrowserWindow } = require('electron/main')
 const path = require('node:path')
 
-const mainFolder = process.cwd()
 let splashWindow
 
 function createSplashWindow() {

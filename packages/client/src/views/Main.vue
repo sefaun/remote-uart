@@ -1,9 +1,7 @@
 <template>
   <div class="w-full h-screen">
     <div class="w-full h-full">
-      <div
-        class="h-[var(--navbar-height)] flex justify-between items-center flex-wrap bg-slate-300 dark:bg-gray-900 px-3"
-      >
+      <div class="h-20 flex justify-between items-center flex-wrap bg-slate-300 dark:bg-gray-900 px-3">
         <div>
           <div class="flex items-center gap-2">
             <div>Server Bağlantı Durumu:</div>
@@ -111,7 +109,6 @@ const serialPort = useSerialPort()
 const mqtt = useMQTT()
 
 const uartOptionsDialog = ref(false)
-const incomingMessage: Ref<string | Buffer> = ref()
 const incomingCommand: Ref<TUartCommand> = ref()
 const incomingCommands: Ref<TUartCommand[]> = ref([])
 const connectionStatus = ref(false)
@@ -189,7 +186,7 @@ function createConnection() {
       mqttTopics.client.uartChannelOptions(clientId.value),
       mqttTopics.client.uartStatus(clientId.value),
       mqttTopics.client.uartCommand(clientId.value),
-      mqttTopics.client.file(clientId.value),
+      mqttTopics.client.deviceDebug(clientId.value),
     ])
 
     ElNotification({
@@ -225,8 +222,8 @@ function createConnection() {
         }
         return
 
-      case mqttTopics.client.file(clientId.value):
-        incomingMessage.value = packet.payload
+      case mqttTopics.client.deviceDebug(clientId.value):
+        //push serial
         return
     }
   })

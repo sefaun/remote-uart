@@ -28,6 +28,9 @@ importers:
       sass:
         specifier: ^1.85.1
         version: 1.85.1
+      serialport:
+        specifier: ^13.0.0
+        version: 13.0.0
       tailwindcss:
         specifier: ^4.0.13
         version: 4.0.14
