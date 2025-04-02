@@ -1,110 +1,138 @@
 <template>
-  <div class="flex justify-end items-center mb-3">
-    <ElButton :icon="Refresh" @click.left="getActivePorts()" size="small" type="info">PORT'ları Yenile</ElButton>
-  </div>
-  <div class="flex items-center">
-    <table>
-      <tbody>
-        <tr>
-          <td class="text-right p-1">Port:</td>
-          <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.path" placeholder="Port" size="small" class="w-full">
-              <ElOption v-for="port of ports" :key="port.path" :label="port.path" :value="port.path" />
-            </ElSelect>
-          </td>
-        </tr>
-        <tr>
-          <td class="text-right p-1">Baud Rate:</td>
-          <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.baudRate" size="small" class="w-full">
-              <ElOption v-for="rate of baudRate" :key="rate" :value="rate">
-                {{ rate }}
-              </ElOption>
-            </ElSelect>
-          </td>
-        </tr>
-        <tr>
-          <td class="text-right p-1">Data bits:</td>
-          <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.dataBits" size="small" class="w-full">
-              <ElOption v-for="dBit of dataBits" :key="dBit" :value="dBit">
-                {{ dBit }}
-              </ElOption>
-            </ElSelect>
-          </td>
-        </tr>
-        <tr>
-          <td class="text-right p-1">Stop bits:</td>
-          <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.stopBits" size="small" class="w-full">
-              <ElOption v-for="sBit of stopBits" :key="sBit" :value="sBit">
-                {{ sBit }}
-              </ElOption>
-            </ElSelect>
-          </td>
-        </tr>
-        <tr>
-          <td class="text-right p-1">Parity:</td>
-          <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.parity" size="small" class="w-full">
-              <ElOption v-for="parit of parity" :key="parit" :value="parit">
-                {{ parit }}
-              </ElOption>
-            </ElSelect>
-          </td>
-        </tr>
-        <tr>
-          <td class="text-right p-1">Flow Control:</td>
-          <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.flowControl" size="small" class="w-full">
-              <ElOption v-for="flow of flowControl" :key="flow" :value="flow">
-                {{ flow }}
-              </ElOption>
-            </ElSelect>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="flex justify-center items-center">
-    <ElButton :icon="Check" @click.left.stop="saveSerialPortOptions()" type="primary" class="w-full mt-5">
-      Kaydet
+  <div class="w-full">
+    <div class="flex items-center gap-2">
+      <div>UART Bağlantı Durumu:</div>
+      <div>{{ uartConnectionTypeIcon.name }}</div>
+      <div class="flex items-center">
+        <ElIcon :color="uartConnectionTypeIcon.color">
+          <component :is="uartConnectionTypeIcon.is" />
+        </ElIcon>
+      </div>
+    </div>
+    <ElButton
+      :disabled="serialPort.getSerialConnectionStatus()"
+      :loading="serialPortConnectionType == connectionTypes.connecting"
+      @click.left="createSerialConnection()"
+      type="success"
+      size="small"
+    >
+      Bağlan
+    </ElButton>
+    <ElButton
+      :disabled="!serialPort.getSerialConnectionStatus()"
+      @click.left="closeSerialConnection()"
+      type="danger"
+      size="small"
+    >
+      Bağlan Kapat
+    </ElButton>
+    <ElButton @click.left="serialPortSettingsDialog.setSerialPortSettingsDialog(true)" type="info" size="small">
+      UART Ayarları
     </ElButton>
   </div>
+  <ElDialog v-model="serialPortSettingsDialog.serialPortSettingsDialog.value" title="UART Ayarları" width="300px">
+    <SerialPortSettings v-if="serialPortSettingsDialog" @saved="closeSerialPortSettingsDialog()"></SerialPortSettings>
+  </ElDialog>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
-import { ElButton, ElSelect, ElOption } from 'element-plus'
-import { Check, Refresh } from '@element-plus/icons-vue'
-import { cloneDeep, baudRate, dataBits, flowControl, parity, stopBits } from '@remote-uart/shared'
-import type { TActiveSerialPortsPayload } from '@remote-uart/shared'
+import { ElNotification, ElButton, ElDialog, ElIcon } from 'element-plus'
+import { CircleCheck, CircleClose, Loading } from '@element-plus/icons-vue'
+import { connectionTypes, mqttTopics } from '@remote-uart/shared'
+import type { TConnectionTypes } from '@remote-uart/shared'
+import { useClient } from '@/composables/Client'
+import { useMQTT } from '@/composables/MQTT'
 import { useSerialPort } from '@/composables/SerialPort'
+import { useSerialPortSettingsDialog } from '@/composables/SerialPortSettingsDialog'
+import SerialPortSettings from '@/components/SerialPortSettings.vue'
 
-const emit = defineEmits<{
-  (e: 'close'): void
-}>()
-
+const client = useClient()
+const mqtt = useMQTT()
 const serialPort = useSerialPort()
+const serialPortSettingsDialog = useSerialPortSettingsDialog()
 
-const ports: Ref<TActiveSerialPortsPayload[]> = ref()
-const payload = ref(cloneDeep(serialPort.getPortSettings()))
+const serialPortConnectionType: Ref<TConnectionTypes> = ref(connectionTypes.notConnected)
 
-async function getActivePorts() {
-  ports.value = await serialPort.getActivePorts()
-}
-
-function saveSerialPortOptions() {
-  serialPort.setPortSettings(cloneDeep(payload.value))
-  close()
-}
-
-function close() {
-  emit('close')
-}
-
-onMounted(() => {
-  getActivePorts()
+const uartConnectionTypeIcon = computed(() => {
+  switch (serialPortConnectionType.value) {
+    case connectionTypes.notConnected:
+      return {
+        is: CircleClose,
+        name: 'Bağlı Değil',
+        color: 'red',
+      }
+    case connectionTypes.connecting:
+      return {
+        is: Loading,
+        name: 'Bağlanıyor',
+        color: 'orange',
+      }
+    case connectionTypes.connected:
+      return {
+        is: CircleCheck,
+        name: 'Bağlı',
+        color: 'green',
+      }
+    case connectionTypes.connectionClosing:
+      return {
+        is: Loading,
+        name: 'Bağlantı Kapanıyor',
+        color: 'orange',
+      }
+  }
 })
+
+function serialConnectionValidation() {
+  if (!serialPort.getPortSettings().path) {
+    ElNotification({
+      type: 'error',
+      message: 'Port Seçilmedi',
+    })
+    return false
+  }
+
+  return true
+}
+
+function createSerialConnection() {
+  if (!serialConnectionValidation()) {
+    return
+  }
+
+  serialPortConnectionType.value = connectionTypes.connecting
+
+  const serialPortConnection = serialPort.createSerialPort({
+    path: serialPort.getPortSettings().path,
+  }) as any
+
+  // Bağlantı sağlandığında burası çalışır
+  serialPortConnection.on('open', () => {
+    serialPort.setSerialConnectionStatus(true)
+    serialPortConnectionType.value = connectionTypes.connected
+    serialPortConnection.on('data', (data: any) => {
+      console.log(data)
+    })
+  })
+
+  // Bağlantı sağlanamazsa burası çalışır
+  serialPortConnection.on('error', (_err: Error) => {
+    serialPort.setSerialConnectionStatus(false)
+    serialPortConnectionType.value = connectionTypes.notConnected
+  })
+}
+
+function closeSerialConnection() {
+  serialPortConnectionType.value = connectionTypes.connectionClosing
+  serialPort.closeSerialPort()
+  serialPortConnectionType.value = connectionTypes.notConnected
+}
+
+function closeSerialPortSettingsDialog() {
+  serialPortConnectionType.value = connectionTypes.connectionClosing
+  serialPortSettingsDialog.setSerialPortSettingsDialog(false)
+  serialPort.closeSerialPort()
+  serialPortConnectionType.value = connectionTypes.notConnected
+}
 </script>

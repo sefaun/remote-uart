@@ -7,9 +7,9 @@
             <div>Server Bağlantı Durumu:</div>
             <div>{{ mqttConnectionTypeIcon.name }}</div>
             <div class="flex items-center">
-              <el-icon :color="mqttConnectionTypeIcon.color">
+              <ElIcon :color="mqttConnectionTypeIcon.color">
                 <component :is="mqttConnectionTypeIcon.is" />
-              </el-icon>
+              </ElIcon>
             </div>
           </div>
           <ElButton
@@ -53,35 +53,7 @@
         </div>
       </div>
       <div class="w-full p-3">
-        <div class="w-full">
-          <div class="flex items-center gap-2">
-            <div>UART Bağlantı Durumu:</div>
-            <div>{{ uartConnectionTypeIcon.name }}</div>
-            <div class="flex items-center">
-              <el-icon :color="uartConnectionTypeIcon.color">
-                <component :is="uartConnectionTypeIcon.is" />
-              </el-icon>
-            </div>
-          </div>
-          <ElButton
-            :disabled="serialPort.getSerialConnectionStatus()"
-            :loading="serialPortConnectionType == connectionTypes.connecting"
-            @click.left="createSerialConnection()"
-            type="success"
-            size="small"
-          >
-            Bağlan
-          </ElButton>
-          <ElButton
-            :disabled="!serialPort.getSerialConnectionStatus()"
-            @click.left="closeSerialConnection()"
-            type="danger"
-            size="small"
-          >
-            Bağlan Kapat
-          </ElButton>
-          <ElButton @click.left="setUartOptionsDialog(true)" type="info" size="small">UART Ayarları</ElButton>
-        </div>
+        <SerialPort></SerialPort>
         <div class="w-full flex gap-5 mt-3">
           <ElTabs class="w-full">
             <ElTabPane label="Client İşlemleri">
@@ -235,13 +207,10 @@
       </div>
     </div>
   </div>
-  <ElDialog v-model="uartOptionsDialog" title="UART Ayarları" width="300px">
-    <SerialPort v-if="uartOptionsDialog" @close="closeUartOptionsDialog()"></SerialPort>
-  </ElDialog>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, computed, ref } from 'vue'
+import { onBeforeUnmount, computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import {
   ElNotification,
@@ -253,7 +222,6 @@ import {
   ElTabPane,
   ElSelect,
   ElOption,
-  ElDialog,
 } from 'element-plus'
 import { Loading, CircleCheck, CopyDocument, CircleClose, Refresh, Position, Delete } from '@element-plus/icons-vue'
 import { isJSON, isObject, mqttTopics, connectionTypes, commandTypes } from '@remote-uart/shared'
@@ -267,7 +235,7 @@ const serialPort = useSerialPort()
 const mqtt = useMQTT()
 const mqttClient = useMqttClient()
 
-const uartOptionsDialog = ref(false)
+const serialPortSettingsDialog = ref(false)
 const mqttConnectionStatus = ref(false)
 const mqttConnectionType: Ref<TConnectionTypes> = ref(connectionTypes.notConnected)
 const serialPortConnectionType: Ref<TConnectionTypes> = ref(connectionTypes.notConnected)
@@ -281,8 +249,6 @@ const uartConnectionStatus = ref(false)
 const adminIdDisabled = ref(false)
 const clientConnectionStatus = ref(false)
 const uartConnectionOptions: Ref<TSerialPortOptions> = ref()
-const localStorageAdminIdKey: string = import.meta.env.VITE_ADMIN_ID
-const localStorageClientIdKey: string = import.meta.env.VITE_CLIENT_ID
 const adminIdLength = {
   min: 4,
   max: 36,
@@ -320,85 +286,11 @@ const mqttConnectionTypeIcon = computed(() => {
   }
 })
 
-const uartConnectionTypeIcon = computed(() => {
-  switch (serialPortConnectionType.value) {
-    case connectionTypes.notConnected:
-      return {
-        is: CircleClose,
-        name: 'Bağlı Değil',
-        color: 'red',
-      }
-    case connectionTypes.connecting:
-      return {
-        is: Loading,
-        name: 'Bağlanıyor',
-        color: 'orange',
-      }
-    case connectionTypes.connected:
-      return {
-        is: CircleCheck,
-        name: 'Bağlı',
-        color: 'green',
-      }
-    case connectionTypes.connectionClosing:
-      return {
-        is: Loading,
-        name: 'Bağlantı Kapanıyor',
-        color: 'orange',
-      }
-  }
-})
-
 const clientMqttConnection = computed(
   () => mqttConnectionType.value == connectionTypes.connected && clientConnectionStatus.value
 )
 
-function serialConnectionValidation() {
-  if (!serialPort.getPortSettings().path) {
-    ElNotification({
-      type: 'error',
-      message: 'Port Seçilmedi',
-    })
-    return false
-  }
-
-  return true
-}
-
-function closeSerialConnection() {
-  serialPortConnectionType.value = connectionTypes.connectionClosing
-  serialPort.closeSerialPort()
-  serialPortConnectionType.value = connectionTypes.notConnected
-}
-
-function createSerialConnection() {
-  if (!serialConnectionValidation()) {
-    return
-  }
-
-  serialPortConnectionType.value = connectionTypes.connecting
-
-  const serialPortConnection = serialPort.createSerialPort({
-    path: serialPort.getPortSettings().path,
-  }) as any
-
-  // Bağlantı sağlandığında burası çalışır
-  serialPortConnection.on('open', () => {
-    serialPort.setSerialConnectionStatus(true)
-    serialPortConnectionType.value = connectionTypes.connected
-    serialPortConnection.on('data', (data: any) => {
-      console.log(data)
-    })
-  })
-
-  // Bağlantı sağlanamazsa burası çalışır
-  serialPortConnection.on('error', (_err: Error) => {
-    serialPort.setSerialConnectionStatus(false)
-    serialPortConnectionType.value = connectionTypes.notConnected
-  })
-}
-
-function connectionValidation() {
+function mqttConnectionValidation() {
   if (adminId.value.length < adminIdLength.min || adminId.value.length > adminIdLength.max) {
     ElNotification({
       type: 'warning',
@@ -484,11 +376,11 @@ function closeMqttConnection() {
 }
 
 function createConnection() {
-  if (!connectionValidation()) {
+  if (!mqttConnectionValidation()) {
     return
   }
 
-  localStorage.setItem(localStorageClientIdKey, clientId.value)
+  localStorage.setItem(import.meta.env.VITE_CLIENT_ID, clientId.value)
 
   mqttConnectionType.value = connectionTypes.connecting
   const mqttConnection = mqtt.connect()
@@ -569,14 +461,8 @@ function checkUARTConnection() {
   mqtt.getConnection().publish(mqttTopics.client.uartStatus(clientId.value), '')
 }
 
-function closeUartOptionsDialog() {
-  setUartOptionsDialog(false)
-  serialPort.closeSerialPort()
-  serialPortConnectionType.value = connectionTypes.notConnected
-}
-
 function setUartOptionsDialog(value: boolean) {
-  uartOptionsDialog.value = value
+  serialPortSettingsDialog.value = value
 }
 
 function checkUARTOptions() {
@@ -599,26 +485,6 @@ function copyClientId() {
     message: 'ID Kopyalandı',
   })
 }
-
-function setStartingOperations() {
-  const localAdminData = localStorage.getItem(localStorageAdminIdKey)
-  const localClientData = localStorage.getItem(localStorageClientIdKey)
-
-  if (!localAdminData) {
-    adminId.value = window.crypto.randomUUID()
-    localStorage.setItem(localStorageAdminIdKey, adminId.value)
-  } else {
-    adminId.value = localAdminData
-  }
-
-  if (localClientData) {
-    clientId.value = localClientData
-  }
-}
-
-onMounted(() => {
-  setStartingOperations()
-})
 
 onBeforeUnmount(() => {
   closeMqttConnection()
