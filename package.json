@@ -20,6 +20,6 @@
   "homepage": "",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/....git"
+    "url": "git+https://github.com/sefaun/remote-uart.git"
   }
 }

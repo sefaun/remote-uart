@@ -22,6 +22,7 @@
     "element-plus": "^2.9.6",
     "mqtt": "^5.10.4",
     "sass": "^1.85.1",
+    "serialport": "^13.0.0",
     "tailwindcss": "^4.0.13",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
@@ -31,7 +32,7 @@
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
     "electron": "^35.0.1",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^24.13.3",
     "typescript": "~5.7.2",
     "vite": "^6.2.0",
     "vue-tsc": "^2.2.4"
@@ -40,6 +41,7 @@
     "appId": "com.deerco.id",
     "productName": "Deerco",
     "directories": {
+      "output": "release",
       "buildResources": "build"
     },
     "files": [

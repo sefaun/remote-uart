@@ -1,7 +1,6 @@
 const { app, BrowserWindow } = require('electron/main')
 const path = require('node:path')
 
-const mainFolder = process.cwd()
 let splashWindow
 
 function createSplashWindow() {
@@ -24,10 +23,10 @@ function createSplashWindow() {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1250,
-    height: 755,
-    minWidth: 1250,
-    minHeight: 755,
+    width: 720,
+    height: 400,
+    minWidth: 720,
+    minHeight: 400,
     autoHideMenuBar: true,
     titleBarStyle: 'default',
     transparent: false,

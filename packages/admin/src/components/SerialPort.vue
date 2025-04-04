@@ -1,60 +1,61 @@
 <template>
   <div class="w-full">
-    <div class="flex justify-between">
-      <div>
-        <div class="flex items-center gap-2">
-          <div>UART Bağlantı Durumu:</div>
-          <div>{{ serialPortConnectionTypeIcon.name }}</div>
-          <div class="flex items-center">
-            <ElIcon :color="serialPortConnectionTypeIcon.color">
-              <component :is="serialPortConnectionTypeIcon.is" />
-            </ElIcon>
-          </div>
-        </div>
-        <ElButton
-          :disabled="serialPort.getSerialConnectionStatus()"
-          :loading="serialPortConnectionType == connectionTypes.connecting"
-          @click.left="createSerialConnection()"
-          type="success"
-          size="small"
-        >
-          Bağlan
-        </ElButton>
-        <ElButton
-          :disabled="!serialPort.getSerialConnectionStatus()"
-          @click.left="closeSerialConnection()"
-          type="danger"
-          size="small"
-        >
-          Bağlan Kapat
-        </ElButton>
-      </div>
-      <div>
-        <SerialPortSettings @change="closeSerialPortSettingsDialog()"></SerialPortSettings>
+    <div class="flex items-center gap-2">
+      <div>UART Bağlantı Durumu:</div>
+      <div>{{ uartConnectionTypeIcon.name }}</div>
+      <div class="flex items-center">
+        <ElIcon :color="uartConnectionTypeIcon.color">
+          <component :is="uartConnectionTypeIcon.is" />
+        </ElIcon>
       </div>
     </div>
+    <ElButton
+      :disabled="serialPort.getSerialConnectionStatus()"
+      :loading="serialPortConnectionType == connectionTypes.connecting"
+      @click.left="createSerialConnection()"
+      type="success"
+      size="small"
+    >
+      Bağlan
+    </ElButton>
+    <ElButton
+      :disabled="!serialPort.getSerialConnectionStatus()"
+      @click.left="closeSerialConnection()"
+      type="danger"
+      size="small"
+    >
+      Bağlan Kapat
+    </ElButton>
+    <ElButton @click.left="serialPortSettingsDialog.setSerialPortSettingsDialog(true)" type="info" size="small">
+      UART Ayarları
+    </ElButton>
   </div>
+  <ElDialog v-model="serialPortSettingsDialog.serialPortSettingsDialog.value" title="UART Ayarları" width="300px">
+    <SerialPortSettings v-if="serialPortSettingsDialog" @saved="closeSerialPortSettingsDialog()"></SerialPortSettings>
+  </ElDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
-import { ElNotification, ElButton, ElIcon } from 'element-plus'
+import { ElNotification, ElButton, ElDialog, ElIcon } from 'element-plus'
 import { CircleCheck, CircleClose, Loading } from '@element-plus/icons-vue'
-import { debounce, connectionTypes, mqttTopics } from '@remote-uart/shared'
+import { connectionTypes, debounce, mqttTopics } from '@remote-uart/shared'
 import type { TConnectionTypes } from '@remote-uart/shared'
 import { useClient } from '@/composables/Client'
 import { useMQTT } from '@/composables/MQTT'
 import { useSerialPort } from '@/composables/SerialPort'
+import { useSerialPortSettingsDialog } from '@/composables/SerialPortSettingsDialog'
 import SerialPortSettings from '@/components/SerialPortSettings.vue'
 
 const client = useClient()
 const mqtt = useMQTT()
 const serialPort = useSerialPort()
+const serialPortSettingsDialog = useSerialPortSettingsDialog()
 
 const serialPortConnectionType: Ref<TConnectionTypes> = ref(connectionTypes.notConnected)
 
-const serialPortConnectionTypeIcon = computed(() => {
+const uartConnectionTypeIcon = computed(() => {
   switch (serialPortConnectionType.value) {
     case connectionTypes.notConnected:
       return {
@@ -112,7 +113,7 @@ function createSerialConnection() {
     serialPortConnectionType.value = connectionTypes.connected
     serialPortConnection.on('data', (data: Buffer) => {
       if (mqtt.checkConnection()) {
-        mqtt.getConnection().publish(mqttTopics.admin.deviceDebug(client.getClientId()), data)
+        mqtt.getConnection().publish(mqttTopics.client.deviceDebug(client.getClientId()), data)
       } else {
         debounce(() => {
           ElNotification({
@@ -139,14 +140,9 @@ function closeSerialConnection() {
 }
 
 function closeSerialPortSettingsDialog() {
-  if (serialPort.checkConnection()) {
-    closeSerialConnection()
-  }
-
-  if (mqtt.checkConnection()) {
-    mqtt
-      .getConnection()
-      .publish(mqttTopics.admin.uartChannelOptions(client.getClientId()), JSON.stringify(serialPort.getPortSettings()))
-  }
+  serialPortConnectionType.value = connectionTypes.connectionClosing
+  serialPortSettingsDialog.setSerialPortSettingsDialog(false)
+  serialPort.closeSerialPort()
+  serialPortConnectionType.value = connectionTypes.notConnected
 }
 </script>

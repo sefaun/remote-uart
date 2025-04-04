@@ -1,7 +1,6 @@
 const { app, BrowserWindow } = require('electron/main')
 const path = require('node:path')
 
-const mainFolder = process.cwd()
 let splashWindow
 
 function createSplashWindow() {
@@ -14,8 +13,8 @@ function createSplashWindow() {
     center: true,
     resizable: false,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
+      nodeIntegration: true,
+      contextIsolation: false,
     },
   })
 
@@ -24,10 +23,10 @@ function createSplashWindow() {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1250,
-    height: 755,
-    minWidth: 1250,
-    minHeight: 755,
+    width: 1080,
+    height: 600,
+    minWidth: 1080,
+    minHeight: 600,
     autoHideMenuBar: true,
     titleBarStyle: 'default',
     transparent: false,
@@ -36,7 +35,7 @@ function createWindow() {
       devTools: true,
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
-      contextIsolation: true,
+      contextIsolation: false,
     },
   })
 
