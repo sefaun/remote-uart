@@ -1,3 +1,4 @@
+export * from './lodash.js'
 export * from './global-types.js'
 export * from './types.js'
 export * from './enums.js'

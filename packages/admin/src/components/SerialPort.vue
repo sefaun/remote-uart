@@ -40,7 +40,7 @@ import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import { ElNotification, ElButton, ElDialog, ElIcon } from 'element-plus'
 import { CircleCheck, CircleClose, Loading } from '@element-plus/icons-vue'
-import { connectionTypes, mqttTopics } from '@remote-uart/shared'
+import { connectionTypes, debounce, mqttTopics } from '@remote-uart/shared'
 import type { TConnectionTypes } from '@remote-uart/shared'
 import { useClient } from '@/composables/Client'
 import { useMQTT } from '@/composables/MQTT'
@@ -111,8 +111,18 @@ function createSerialConnection() {
   serialPortConnection.on('open', () => {
     serialPort.setSerialConnectionStatus(true)
     serialPortConnectionType.value = connectionTypes.connected
-    serialPortConnection.on('data', (data: any) => {
-      console.log(data)
+    serialPortConnection.on('data', (data: Buffer) => {
+      if (mqtt.checkConnection()) {
+        mqtt.getConnection().publish(mqttTopics.client.deviceDebug(client.getClientId()), data)
+      } else {
+        debounce(() => {
+          ElNotification({
+            type: 'error',
+            title: 'Server Bağlantı Hatası',
+            message: 'Server bağlantısı olmadığı için UART verisi gönderilemedi',
+          })
+        }, 3000)()
+      }
     })
   })
 

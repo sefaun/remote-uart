@@ -12,6 +12,7 @@ export function useAdmin() {
   }
 
   return {
+    adminId,
     getAdminId,
     setAdminId,
   }

@@ -12,6 +12,7 @@ export function useClient() {
   }
 
   return {
+    clientId,
     getClientId,
     setClientId,
   }

@@ -23,10 +23,10 @@ function createSplashWindow() {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1250,
-    height: 755,
-    minWidth: 1250,
-    minHeight: 755,
+    width: 1080,
+    height: 600,
+    minWidth: 1080,
+    minHeight: 600,
     autoHideMenuBar: true,
     titleBarStyle: 'default',
     transparent: false,

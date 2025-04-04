@@ -16,7 +16,7 @@
             type="success"
             size="small"
             :loading="mqttConnectionType == connectionTypes.connecting"
-            :disabled="mqttConnectionStatus"
+            :disabled="mqtt.checkConnection()"
             @click.left="createConnection()"
           >
             Bağlan
@@ -26,7 +26,7 @@
           <div class="flex justify-center items-center gap-2">
             <div class="font-bold">ID:</div>
             <div>
-              <div>{{ client.getClientId() }}</div>
+              <div class="text-sm">{{ client.getClientId() }}</div>
             </div>
           </div>
           <div>
@@ -38,26 +38,6 @@
       </div>
       <div class="w-full p-3">
         <SerialPort></SerialPort>
-        <div class="w-full flex justify-center mt-2">
-          <div class="w-full mt-4">
-            <div class="flex justify-between items-center gap-2">
-              <div class="font-bold">Gelen Özel Komutlar</div>
-              <div class="flex items-center gap-2">
-                <ElButton :icon="Delete" @click.left="clearIncomingCommands()" type="danger" size="small">
-                  Temizle
-                </ElButton>
-              </div>
-            </div>
-            <div class="w-full h-[400px] overflow-y-auto border rounded space-y-1 p-1 mt-2">
-              <div v-for="command of incomingCommands" class="flex items-center gap-1 text-sm">
-                <div class="font-bold">{{ command.time }} - {{ command.type }}:</div>
-                <div>
-                  {{ command.command }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -67,22 +47,19 @@
 import { onBeforeUnmount, onMounted, computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { ElNotification, ElIcon, ElButton, ElTooltip } from 'element-plus'
-import { Loading, CircleCheck, CopyDocument, CircleClose, Delete } from '@element-plus/icons-vue'
-import { commandTypes, mqttTopics, stringHexToBuffer } from '@remote-uart/shared'
+import { Loading, CircleCheck, CopyDocument, CircleClose } from '@element-plus/icons-vue'
+import { debounce, commandTypes, mqttTopics, stringHexToBuffer } from '@remote-uart/shared'
 import type { TConnectionTypes, TUartCommand } from '@remote-uart/shared'
+import { useClient } from '@/composables/Client'
 import { useSerialPort } from '@/composables/SerialPort'
 import { useMQTT } from '@/composables/MQTT'
 import { connectionTypes } from '@/enums'
 import SerialPort from '@/components/SerialPort.vue'
-import { useClient } from '@/composables/Client'
 
 const client = useClient()
 const mqtt = useMQTT()
 const serialPort = useSerialPort()
 
-const incomingCommand: Ref<TUartCommand> = ref()
-const incomingCommands: Ref<TUartCommand[]> = ref([])
-const mqttConnectionStatus = ref(false)
 const mqttConnectionType: Ref<TConnectionTypes> = ref(connectionTypes.notConnected)
 
 const mqttConnectionTypeIcon = computed(() => {
@@ -131,13 +108,12 @@ function sendData(topic: string, data: string | Buffer) {
 }
 
 function connectionClosedOperations() {
-  mqttConnectionStatus.value = false
   mqttConnectionType.value = connectionTypes.notConnected
 }
 
 function closeConnection() {
   mqttConnectionType.value = connectionTypes.connectionClosing
-  mqtt.closeConnection(true)
+  mqtt.closeConnection()
   connectionClosedOperations()
 }
 
@@ -145,12 +121,11 @@ function createConnection() {
   mqttConnectionType.value = connectionTypes.connecting
 
   mqtt.connect()
-  const connection = mqtt.getConnection()
+  const mqttConnection = mqtt.getConnection()
 
-  connection.on('connect', () => {
-    mqttConnectionStatus.value = true
+  mqttConnection.on('connect', () => {
     mqttConnectionType.value = connectionTypes.connected
-    connection.subscribe([
+    mqttConnection.subscribe([
       mqttTopics.client.mqttConnectionStatus(client.getClientId()),
       mqttTopics.client.uartChannelOptions(client.getClientId()),
       mqttTopics.client.uartStatus(client.getClientId()),
@@ -164,7 +139,7 @@ function createConnection() {
     })
   })
 
-  connection.on('message', (_topic, _payload, packet) => {
+  mqttConnection.on('message', (_topic, _payload, packet) => {
     switch (packet.topic) {
       case mqttTopics.client.mqttConnectionStatus(client.getClientId()):
         mqttConnectionStatusEvent(true)
@@ -179,25 +154,34 @@ function createConnection() {
         return
 
       case mqttTopics.client.uartCommand(client.getClientId()):
-        incomingCommand.value = JSON.parse(packet.payload.toString()) as TUartCommand
-        incomingCommands.value.push(incomingCommand.value)
+        const incomingCommand = JSON.parse(packet.payload.toString()) as TUartCommand
 
         if (serialPort.checkConnection()) {
           serialPort.sendData(
-            incomingCommand.value.type == commandTypes.hex
-              ? stringHexToBuffer(incomingCommand.value.command)
-              : incomingCommand.value.command
+            incomingCommand.type == commandTypes.hex
+              ? stringHexToBuffer(incomingCommand.command)
+              : incomingCommand.command
           )
         }
         return
 
       case mqttTopics.client.deviceDebug(client.getClientId()):
-        //push serial
+        if (serialPort.checkConnection()) {
+          serialPort.getConnection().write(packet.payload)
+        } else {
+          debounce(() => {
+            ElNotification({
+              type: 'error',
+              title: 'UART Bağlantı Hatası',
+              message: 'UART bağlantısı olmadığı için Server verisi gönderilemedi',
+            })
+          }, 3000)()
+        }
         return
     }
   })
 
-  connection.on('close', () => {
+  mqttConnection.on('close', () => {
     ElNotification({
       type: 'error',
       message: 'Server Bağlantısı Kapandı',
@@ -205,13 +189,13 @@ function createConnection() {
     connectionClosedOperations()
   })
 
-  connection.on('error', (error) => {
+  mqttConnection.on('error', (error) => {
     mqttConnectionType.value = connectionTypes.connectionClosing
     ElNotification({
       type: 'error',
       message: error.message,
     })
-    connection.end(true)
+    mqttConnection.end(true)
     connectionClosedOperations()
   })
 }
@@ -222,10 +206,6 @@ function copyClientId() {
     type: 'success',
     message: 'ID Kopyalandı',
   })
-}
-
-function clearIncomingCommands() {
-  incomingCommands.value = []
 }
 
 onMounted(() => {

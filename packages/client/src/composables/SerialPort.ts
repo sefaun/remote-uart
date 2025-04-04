@@ -59,22 +59,24 @@ export function useSerialPort() {
       ...options,
     })
 
-    //bağlantı sağlandığında burası çalışır
-    serialConnection.value.on('open', () => {
-      setSerialConnectionStatus(true)
-    })
-    //karşı taraftan comport kapandığında burası çalışır.
-    serialConnection.value.on('close', () => {
-      setSerialConnectionStatus(false)
-    })
-    // //karşıdan gelen verileri alır
+    return getConnection()
+
+    // bağlantı sağlandığında burası çalışır
+    // serialConnection.value.on('open', () => {
+    //   setSerialConnectionStatus(true)
+    // })
+    // Bağlantı sağlanamazsa burası çalışır
+    // serialConnection.value.on('error', (_err: Error) => {
+    //   setSerialConnectionStatus(false)
+    // })
+    // karşı taraftan comport kapandığında burası çalışır.
+    // serialConnection.value.on('close', () => {
+    //   setSerialConnectionStatus(false)
+    // })
+    // karşıdan gelen verileri alır
     // serialConnection.value.on('data', (data: any) => {
     //   console.log(data, 'serial veri')
     // })
-    //Bağlantı sağlanamazsa burası çalışır
-    serialConnection.value.on('error', (_err: Error) => {
-      setSerialConnectionStatus(false)
-    })
   }
 
   function closeSerialPort() {

@@ -8,7 +8,13 @@
         <tr>
           <td class="text-right p-1">Port:</td>
           <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.path" placeholder="Port" size="small" class="w-full">
+            <ElSelect
+              v-model="payload.path"
+              @change="changedSerialPortSettings"
+              placeholder="Port"
+              size="small"
+              class="w-full"
+            >
               <ElOption v-for="port of ports" :key="port.path" :label="port.path" :value="port.path" />
             </ElSelect>
           </td>
@@ -16,7 +22,7 @@
         <tr>
           <td class="text-right p-1">Baud Rate:</td>
           <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.baudRate" size="small" class="w-full">
+            <ElSelect v-model="payload.baudRate" @change="changedSerialPortSettings" size="small" class="w-full">
               <ElOption v-for="rate of baudRate" :key="rate" :value="rate">
                 {{ rate }}
               </ElOption>
@@ -26,7 +32,7 @@
         <tr>
           <td class="text-right p-1">Data bits:</td>
           <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.dataBits" size="small" class="w-full">
+            <ElSelect v-model="payload.dataBits" @change="changedSerialPortSettings" size="small" class="w-full">
               <ElOption v-for="dBit of dataBits" :key="dBit" :value="dBit">
                 {{ dBit }}
               </ElOption>
@@ -36,7 +42,7 @@
         <tr>
           <td class="text-right p-1">Stop bits:</td>
           <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.stopBits" size="small" class="w-full">
+            <ElSelect v-model="payload.stopBits" @change="changedSerialPortSettings" size="small" class="w-full">
               <ElOption v-for="sBit of stopBits" :key="sBit" :value="sBit">
                 {{ sBit }}
               </ElOption>
@@ -46,7 +52,7 @@
         <tr>
           <td class="text-right p-1">Parity:</td>
           <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.parity" size="small" class="w-full">
+            <ElSelect v-model="payload.parity" @change="changedSerialPortSettings" size="small" class="w-full">
               <ElOption v-for="parit of parity" :key="parit" :value="parit">
                 {{ parit }}
               </ElOption>
@@ -56,7 +62,7 @@
         <tr>
           <td class="text-right p-1">Flow Control:</td>
           <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.flowControl" size="small" class="w-full">
+            <ElSelect v-model="payload.flowControl" @change="changedSerialPortSettings" size="small" class="w-full">
               <ElOption v-for="flow of flowControl" :key="flow" :value="flow">
                 {{ flow }}
               </ElOption>
@@ -66,24 +72,19 @@
       </tbody>
     </table>
   </div>
-  <div class="flex justify-center items-center">
-    <ElButton :icon="Check" @click.left.stop="saveSerialPortOptions()" type="primary" class="w-full mt-5">
-      Kaydet
-    </ElButton>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Ref } from 'vue'
 import { ElButton, ElSelect, ElOption } from 'element-plus'
-import { Check, Refresh } from '@element-plus/icons-vue'
+import { Refresh } from '@element-plus/icons-vue'
 import { cloneDeep, baudRate, dataBits, flowControl, parity, stopBits } from '@remote-uart/shared'
 import type { TActiveSerialPortsPayload } from '@remote-uart/shared'
 import { useSerialPort } from '@/composables/SerialPort'
 
 const emit = defineEmits<{
-  (e: 'saved'): void
+  (e: 'change'): void
 }>()
 
 const serialPort = useSerialPort()
@@ -95,13 +96,13 @@ async function getActivePorts() {
   ports.value = await serialPort.getActivePorts()
 }
 
-function saveSerialPortOptions() {
+function changedSerialPortSettings() {
   serialPort.setPortSettings(cloneDeep(payload.value))
-  close()
+  change()
 }
 
-function close() {
-  emit('saved')
+function change() {
+  emit('change')
 }
 
 onMounted(() => {
