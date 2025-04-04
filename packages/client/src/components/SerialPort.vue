@@ -116,6 +116,7 @@ function createSerialConnection() {
     serialPortConnectionType.value = connectionTypes.connected
     serialPortConnection.on('data', (data: any) => {
       console.log(data)
+      mqtt.getConnection().publish(mqttTopics.admin.deviceDebug(client.getClientId()), Buffer.from(data))
     })
   })
 
