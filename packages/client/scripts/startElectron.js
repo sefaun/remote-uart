@@ -24,7 +24,12 @@ const setCommonJSProcess = exec('npm run set-commonjs', { cwd: packageJsonDir },
 
   setCommonJSProcess?.kill()
 
-  electronProcess = exec('electron .', { cwd: packageJsonDir })
+  electronProcess = exec('electron .', {
+    cwd: packageJsonDir,
+    env: {
+      NODE_MODE: 'development',
+    },
+  })
 
   //Pencereden kapatma işleminde çalışır.
   electronProcess.on('exit', async (code) => {

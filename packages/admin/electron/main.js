@@ -23,6 +23,7 @@ function createSplashWindow() {
 
 function createWindow() {
   const win = new BrowserWindow({
+    title: 'Remote UART - Admin',
     width: 1080,
     height: 600,
     minWidth: 1080,
@@ -39,12 +40,14 @@ function createWindow() {
     },
   })
 
-  // win.loadURL(path.join(__dirname, '../build/index.html'))
-  win.loadURL('http://localhost:3000')
-
-  win.webContents.openDevTools({
-    mode: 'detach',
-  })
+  if (process.env.NODE_MODE == 'development') {
+    win.loadURL('http://localhost:3000')
+    win.webContents.openDevTools({
+      mode: 'detach',
+    })
+  } else {
+    win.loadURL(path.join(__dirname, '../dist/index.html'))
+  }
 
   win.on('ready-to-show', () => {
     setTimeout(() => {

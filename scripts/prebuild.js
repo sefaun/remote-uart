@@ -1,5 +1,5 @@
 /**
- * Her build alma işleminden önce paketlerin içindeki build klasörlerini siler.
+ * Her dist alma işleminden önce paketlerin içindeki dist klasörlerini siler.
  */
 
 import fs from 'node:fs'
@@ -7,7 +7,7 @@ import path from 'node:path'
 
 const cwd = process.cwd()
 const packages = 'packages'
-const build = 'build'
+const dist = 'dist'
 
 /**
  * Packages içindeki klasör isimlerini alır.
@@ -19,12 +19,12 @@ function getPackagesFolder(source) {
 }
 
 /**
- * Packages klasörü içindeki paketlerin build dosyalarını siler.
+ * Packages klasörü içindeki paketlerin dist dosyalarını siler.
  * @param {string} pkgName
  */
 function removeBuildFiles(pkgName) {
   return new Promise((resolve, reject) => {
-    fs.rm(path.join(cwd, packages, pkgName, build), { recursive: true, force: true }, (err) => {
+    fs.rm(path.join(cwd, packages, pkgName, dist), { recursive: true, force: true }, (err) => {
       if (err) {
         return reject(err)
       }

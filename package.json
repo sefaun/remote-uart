@@ -8,8 +8,7 @@
   "packageManager": "pnpm@9.9.0",
   "scripts": {
     "build": "pnpm prebuild && pnpm -r build",
-    "prebuild": "node scripts/prebuild.js",
-    "postbuild": "node scripts/versions.js"
+    "prebuild": "node scripts/prebuild.js"
   },
   "workspaces": [
     "packages/*"

@@ -2,7 +2,7 @@
   "name": "client",
   "version": "1.0.0",
   "author": "SEFA UN",
-  "description": "This is Deerco Desktop Client App",
+  "description": "This is Remote UART Client Desktop App",
   "private": true,
   "type": "module",
   "main": "electron/main.js",
@@ -11,7 +11,7 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "electron": "node scripts/startElectron.js",
-    "electron:setup": "electron-builder",
+    "setup": "electron-builder",
     "set-commonjs": "node scripts/setCommonJS.js",
     "set-module": "node scripts/setModule.js"
   },
@@ -38,16 +38,17 @@
     "vue-tsc": "^2.2.4"
   },
   "build": {
-    "appId": "com.deercoclient.id",
-    "productName": "Deerco Client",
+    "appId": "com.remoteUartClient.id",
+    "productName": "Remote UART Client",
     "directories": {
       "output": "release",
-      "buildResources": "build"
+      "buildResources": "dist"
     },
     "files": [
-      "build/**/*",
+      "dist/**/*",
+      "electron/*",
       "node_modules/**/*",
-      "electron/*"
+      "../../node_modules/**/*"
     ],
     "extraResources": {
       "from": "src/assets/",
