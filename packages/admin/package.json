@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
-    "@remote-uart/shared": "workspace:*",
+    "@remote-uart/shared": "file:../shared",
     "@tailwindcss/vite": "^4.0.13",
     "element-plus": "^2.9.6",
     "mqtt": "^5.10.4",
@@ -38,20 +38,11 @@
     "vue-tsc": "^2.2.4"
   },
   "build": {
+    "electronVersion": "35.0.1",
     "appId": "com.remoteUartAdmin.id",
     "productName": "Remote UART - Admin",
     "directories": {
-      "output": "release",
-      "buildResources": "dist"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/*",
-      "node_modules/**/*"
-    ],
-    "extraResources": {
-      "from": "src/assets/",
-      "to": "assets"
+      "output": "release"
     },
     "win": {
       "icon": "public/icon-260x260.png",

@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
 import type { TActiveSerialPortsPayload, TSerialPortOptions, TSerialPortOpenOptions } from '@remote-uart/shared'
-const { SerialPort } = require('serialport') as typeof import('serialport')
+const { SerialPort } = window.require('serialport') as typeof import('serialport')
 
 const serialportInfo = 'serialportInfo'
 const serialConnection = ref()

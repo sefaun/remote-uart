@@ -5,11 +5,7 @@
   "author": "Alvemsis",
   "license": "ISC",
   "type": "module",
-  "packageManager": "pnpm@9.9.0",
-  "scripts": {
-    "build": "pnpm prebuild && pnpm -r build",
-    "prebuild": "node scripts/prebuild.js"
-  },
+  "packageManager": "npm@10.8.1",
   "workspaces": [
     "packages/*"
   ],
