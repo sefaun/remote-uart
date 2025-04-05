@@ -47,9 +47,9 @@ function createWindow() {
     win.loadURL(path.join(__dirname, '../dist/index.html'))
   }
 
-    win.webContents.openDevTools({
-      mode: 'detach',
-    })
+  win.webContents.openDevTools({
+    mode: 'detach',
+  })
 
   win.on('ready-to-show', () => {
     setTimeout(() => {
