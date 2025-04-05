@@ -1,6 +1,7 @@
 const { app, BrowserWindow } = require('electron/main')
 const path = require('node:path')
 
+const development = process.env.NODE_MODE == 'development'
 let splashWindow
 
 function createSplashWindow() {
@@ -33,24 +34,22 @@ function createWindow() {
     transparent: false,
     show: false,
     webPreferences: {
-      devTools: true,
+      devTools: development,
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
       contextIsolation: false,
     },
   })
 
-  if (process.env.NODE_MODE == 'development') {
+  if (development) {
     win.loadURL('http://localhost:3001')
-    win.webContents.openDevTools({
-      mode: 'detach',
-    })
   } else {
     win.loadURL(path.join(__dirname, '../dist/index.html'))
+  }
+
     win.webContents.openDevTools({
       mode: 'detach',
     })
-  }
 
   win.on('ready-to-show', () => {
     setTimeout(() => {

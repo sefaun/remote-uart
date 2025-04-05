@@ -39,7 +39,7 @@
   },
   "build": {
     "appId": "com.remoteUartAdmin.id",
-    "productName": "Remote UART Admin",
+    "productName": "Remote UART - Admin",
     "directories": {
       "output": "release",
       "buildResources": "dist"

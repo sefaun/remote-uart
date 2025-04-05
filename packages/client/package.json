@@ -39,7 +39,7 @@
   },
   "build": {
     "appId": "com.remoteUartClient.id",
-    "productName": "Remote UART Client",
+    "productName": "Remote UART - Client",
     "directories": {
       "output": "release",
       "buildResources": "dist"
