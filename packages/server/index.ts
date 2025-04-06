@@ -14,7 +14,9 @@ httpServer.listen(port, function () {
 
   // @ts-ignore
   aedes.on('publish', function (packet, client) {
-    console.log('Publish: ', client.id, packet.payload)
+    if (client) {
+      console.log('Publish: ', client.id, packet.payload)
+    }
   })
 
   // @ts-ignore
