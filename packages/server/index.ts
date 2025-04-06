@@ -1,6 +1,6 @@
 import { createServer } from 'node:net'
 import Aedes from 'aedes'
-const port = 8883
+const port = 1883
 
 // @ts-ignore
 const aedes = new Aedes()
