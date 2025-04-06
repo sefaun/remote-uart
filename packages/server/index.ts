@@ -1,21 +1,24 @@
-import { createServer } from 'node:net'
+import { createServer } from 'node:http'
 import Aedes from 'aedes'
+import ws from 'websocket-stream'
 const port = 1883
 
 // @ts-ignore
 const aedes = new Aedes()
-const server = createServer(aedes.handle)
+const httpServer = createServer()
 
-server.listen(port, function () {
-  console.log('MQTT server listening on port ', port)
+ws.createServer({ server: httpServer }, aedes.handle)
+
+httpServer.listen(port, function () {
+  console.log('MQTT WS Server Listening on Port: ', port)
 
   // @ts-ignore
-  aedes.on('publish', function (packet, _client) {
-    console.log(console.log('publish packet:', packet.payload))
+  aedes.on('publish', function (packet, client) {
+    console.log('Publish: ', client.id, packet.payload)
   })
 
   // @ts-ignore
   aedes.on('client', function (client) {
-    console.log('new client', client.id)
+    console.log('New Client: ', client.id)
   })
 })

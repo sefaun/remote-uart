@@ -9,7 +9,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "aedes": "^0.51.3"
+    "aedes": "^0.51.3",
+    "websocket-stream": "^5.5.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
