@@ -65,7 +65,7 @@
                   <ElButton
                     :icon="Refresh"
                     :disabled="!(mqttConnectionType == connectionTypes.connected)"
-                    :loading="mqttClient.getConnectionControl()"
+                    :loading="mqttConnectionType == connectionTypes.connected && mqttClient.getConnectionControl()"
                     @click.left="manuelClientConnectionCheck()"
                     type="info"
                     size="small"
@@ -441,6 +441,7 @@ function createConnection() {
       type: 'error',
       message: 'Server Bağlantısı Kapandı',
     })
+    mqtt.closeConnection()
     connectionClosedOperations()
   })
 
@@ -450,7 +451,7 @@ function createConnection() {
       type: 'error',
       message: error.message,
     })
-    mqttConnection.end(true)
+    mqtt.closeConnection()
     connectionClosedOperations()
   })
 }
