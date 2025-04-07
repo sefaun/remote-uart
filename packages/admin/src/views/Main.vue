@@ -376,8 +376,6 @@ function createConnection() {
     return
   }
 
-  localStorage.setItem(import.meta.env.VITE_CLIENT_ID, client.getClientId())
-
   mqttConnectionType.value = connectionTypes.connecting
   const mqttConnection = mqtt.connect()
 
