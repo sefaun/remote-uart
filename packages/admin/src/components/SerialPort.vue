@@ -127,10 +127,24 @@ function createSerialConnection() {
     })
   })
 
+  // karşı taraftan comport kapandığında burası çalışır.
+  serialPortConnection.on('close', () => {
+    serialPort.setSerialConnectionStatus(false)
+    closeSerialConnection()
+    ElNotification({
+      type: 'error',
+      message: 'Serial Port Kapatıldı',
+    })
+  })
+
   // Bağlantı sağlanamazsa burası çalışır
   serialPortConnection.on('error', (_err: Error) => {
     serialPort.setSerialConnectionStatus(false)
-    serialPortConnectionType.value = connectionTypes.notConnected
+    closeSerialConnection()
+    ElNotification({
+      type: 'error',
+      message: 'Serial Port Bağlantısı Kurulamadı',
+    })
   })
 }
 

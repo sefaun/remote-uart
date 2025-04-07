@@ -16,7 +16,7 @@
             type="success"
             size="small"
             :loading="mqttConnectionType == connectionTypes.connecting"
-            :disabled="!mqtt.checkConnection()"
+            :disabled="mqtt.checkConnection()"
             @click.left="createConnection()"
           >
             Bağlan
