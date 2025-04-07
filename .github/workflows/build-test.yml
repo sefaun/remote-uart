@@ -23,6 +23,7 @@ jobs:
         cache: 'npm'
     - run: npm install
     - run: cd packages/shared && npm run build && cd ..
+    - run: ls 
     - run: cd admin/ && npm run build && cd ..
     - run: cd client/ && npm run build && cd ..
     - run: cd server/ && npm run build && cd .. && cd ..
