@@ -1,5 +1,5 @@
 import type { ValueOf } from './global-types.js'
-import { commandTypes, connectionTypes, baudRate, dataBits, stopBits, parity, flowControl } from './enums.js'
+import { commandTypes, connectionTypes, baudRate, dataBits, stopBits, parity } from './enums.js'
 
 export type TTheme = 'dark' | 'light'
 
@@ -16,7 +16,6 @@ export type TBaudRate = (typeof baudRate)[number]
 export type TDataBits = (typeof dataBits)[number]
 export type TStopBits = (typeof stopBits)[number]
 export type TParity = (typeof parity)[number]
-export type TFlowControl = (typeof flowControl)[number]
 
 export type TSerialPortOptions = {
   path: string
@@ -24,7 +23,7 @@ export type TSerialPortOptions = {
   dataBits: TDataBits
   stopBits: TStopBits
   parity: TParity
-  flowControl: TFlowControl
+  rtscts: boolean
 }
 
 export type TActiveSerialPortsPayload = {
@@ -36,13 +35,4 @@ export type TActiveSerialPortsPayload = {
   friendlyName: string
   vendorId: string
   productId: string
-}
-
-export type TSerialPortOpenOptions = {
-  path: string
-  baudRate?: number
-  parity?: string
-  dataBits?: number
-  stopBits?: number
-  rtscts?: boolean
 }

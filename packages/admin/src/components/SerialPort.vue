@@ -31,7 +31,10 @@
     </ElButton>
   </div>
   <ElDialog v-model="serialPortSettingsDialog.serialPortSettingsDialog.value" title="UART Ayarları" width="300px">
-    <SerialPortSettings v-if="serialPortSettingsDialog" @saved="closeSerialPortSettingsDialog()"></SerialPortSettings>
+    <SerialPortSettings
+      v-if="serialPortSettingsDialog.serialPortSettingsDialog.value"
+      @saved="closeSerialPortSettingsDialog()"
+    ></SerialPortSettings>
   </ElDialog>
 </template>
 
@@ -103,9 +106,7 @@ function createSerialConnection() {
 
   serialPortConnectionType.value = connectionTypes.connecting
 
-  const serialPortConnection = serialPort.createSerialPort({
-    path: serialPort.getPortSettings().path,
-  }) as any
+  const serialPortConnection = serialPort.createSerialPort() as any
 
   // Bağlantı sağlandığında burası çalışır
   serialPortConnection.on('open', () => {

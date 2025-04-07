@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
-import type { TActiveSerialPortsPayload, TSerialPortOptions, TSerialPortOpenOptions } from '@remote-uart/shared'
+import type { TActiveSerialPortsPayload, TSerialPortOptions } from '@remote-uart/shared'
 const { SerialPort } = require('serialport') as typeof import('serialport')
 
 const serialportInfo = 'serialportInfo'
@@ -9,11 +9,11 @@ const serialConnectionStatus = ref(false)
 const activePorts = ref([])
 const serialPortSettings: Ref<TSerialPortOptions> = ref({
   path: '',
-  baudRate: '38400',
-  dataBits: '8',
-  stopBits: '1',
+  baudRate: 38400,
+  dataBits: 8,
+  stopBits: 1,
   parity: 'none',
-  flowControl: 'None',
+  rtscts: false,
 })
 
 export function useSerialPort() {
@@ -48,16 +48,8 @@ export function useSerialPort() {
     return serialConnection.value
   }
 
-  function createSerialPort(options: TSerialPortOpenOptions) {
-    serialConnection.value = new SerialPort({
-      path: getPortSettings(),
-      baudRate: 9600,
-      parity: 'even',
-      dataBits: 8,
-      stopBits: 1,
-      rtscts: true,
-      ...options,
-    })
+  function createSerialPort() {
+    serialConnection.value = new SerialPort(getPortSettings())
 
     return getConnection()
 

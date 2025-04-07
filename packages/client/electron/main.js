@@ -26,9 +26,9 @@ function createWindow() {
   const win = new BrowserWindow({
     title: 'Remote UART - Client',
     width: 720,
-    height: 400,
+    height: 435,
     minWidth: 720,
-    minHeight: 400,
+    minHeight: 435,
     autoHideMenuBar: true,
     titleBarStyle: 'default',
     transparent: false,

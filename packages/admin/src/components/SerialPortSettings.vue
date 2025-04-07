@@ -54,13 +54,9 @@
           </td>
         </tr>
         <tr>
-          <td class="text-right p-1">Flow Control:</td>
-          <td class="w-[150px] p-1">
-            <ElSelect v-model="payload.flowControl" size="small" class="w-full">
-              <ElOption v-for="flow of flowControl" :key="flow" :value="flow">
-                {{ flow }}
-              </ElOption>
-            </ElSelect>
+          <td class="text-right p-1">Handshake RTS/CTS:</td>
+          <td class="w-[150px] p-1 flex items-center justify-end">
+            <ElSwitch v-model="payload.rtscts"></ElSwitch>
           </td>
         </tr>
       </tbody>
@@ -76,9 +72,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Ref } from 'vue'
-import { ElButton, ElSelect, ElOption } from 'element-plus'
+import { ElButton, ElSelect, ElOption, ElSwitch } from 'element-plus'
 import { Check, Refresh } from '@element-plus/icons-vue'
-import { cloneDeep, baudRate, dataBits, flowControl, parity, stopBits } from '@remote-uart/shared'
+import { cloneDeep, baudRate, dataBits, parity, stopBits } from '@remote-uart/shared'
 import type { TActiveSerialPortsPayload } from '@remote-uart/shared'
 import { useSerialPort } from '@/composables/SerialPort'
 

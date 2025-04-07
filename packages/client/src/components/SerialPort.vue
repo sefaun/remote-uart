@@ -102,9 +102,7 @@ function createSerialConnection() {
 
   serialPortConnectionType.value = connectionTypes.connecting
 
-  const serialPortConnection = serialPort.createSerialPort({
-    path: serialPort.getPortSettings().path,
-  }) as any
+  const serialPortConnection = serialPort.createSerialPort() as any
 
   // Bağlantı sağlandığında burası çalışır
   serialPortConnection.on('open', () => {

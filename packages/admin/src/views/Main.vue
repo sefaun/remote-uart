@@ -163,10 +163,6 @@
                         <div class="font-bold">Databits:</div>
                         <div>{{ clientSerialPortConnectionOptions?.dataBits }}</div>
                       </div>
-                      <div class="flex items-center gap-1">
-                        <div class="font-bold">Flow Kontrol:</div>
-                        <div>{{ clientSerialPortConnectionOptions?.flowControl }}</div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -387,7 +383,6 @@ function createConnection() {
       mqttTopics.admin.mqttConnectionStatus(client.getClientId()),
       mqttTopics.admin.uartChannelOptions(client.getClientId()),
       mqttTopics.admin.uartStatus(client.getClientId()),
-      mqttTopics.admin.uartCommand(client.getClientId()),
       mqttTopics.admin.deviceDebug(client.getClientId()),
     ])
 
