@@ -434,18 +434,15 @@ function createConnection() {
       type: 'error',
       message: 'Server Bağlantısı Kapandı',
     })
-    mqtt.closeConnection()
-    connectionClosedOperations()
+    closeMqttConnection()
   })
 
   mqttConnection.on('error', (error) => {
-    mqttConnectionType.value = connectionTypes.connectionClosing
     ElNotification({
       type: 'error',
       message: error.message,
     })
-    mqtt.closeConnection()
-    connectionClosedOperations()
+    closeMqttConnection()
   })
 }
 

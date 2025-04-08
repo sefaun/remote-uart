@@ -47,6 +47,9 @@ import { useClient } from '@/composables/Client'
 import { useMQTT } from '@/composables/MQTT'
 import { useSerialPort } from '@/composables/SerialPort'
 import SerialPortSettings from '@/components/SerialPortSettings.vue'
+const { InterByteTimeoutParser } = window.require(
+  '@serialport/parser-inter-byte-timeout'
+) as typeof import('@serialport/parser-inter-byte-timeout')
 
 const client = useClient()
 const mqtt = useMQTT()
@@ -108,7 +111,9 @@ function createSerialConnection() {
   serialPortConnection.on('open', () => {
     serialPort.setSerialConnectionStatus(true)
     serialPortConnectionType.value = connectionTypes.connected
-    serialPortConnection.on('data', (data: Buffer) => {
+
+    serialPortConnection.pipe(new InterByteTimeoutParser({ interval: 10 })).on('data', (data: Buffer) => {
+      // serialPortConnection.on('data', (data: Buffer) => {
       if (mqtt.checkConnection()) {
         mqtt.getConnection().publish(mqttTopics.admin.deviceDebug(client.getClientId()), data)
       } else {
