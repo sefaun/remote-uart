@@ -6,8 +6,8 @@ let splashWindow
 
 function createSplashWindow() {
   splashWindow = new BrowserWindow({
-    width: 350,
-    height: 100,
+    width: 400,
+    height: 200,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -24,7 +24,7 @@ function createSplashWindow() {
 
 function createWindow() {
   const win = new BrowserWindow({
-    title: 'Remote UART - Client',
+    title: 'Vili TCP/IP Com PORTS Redirector (Slave)',
     width: 720,
     height: 400,
     minWidth: 720,

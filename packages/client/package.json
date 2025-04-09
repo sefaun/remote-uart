@@ -2,7 +2,7 @@
   "name": "client",
   "version": "1.0.0",
   "author": "SEFA UN",
-  "description": "This is Remote UART Client Desktop App",
+  "description": "This is Vili TCP/IP Com PORTS Redirector (Slave) Desktop App",
   "private": true,
   "type": "module",
   "main": "electron/main.js",
@@ -40,7 +40,7 @@
   "build": {
     "electronVersion": "35.0.1",
     "appId": "com.remoteUartClient.id",
-    "productName": "Remote UART - Client",
+    "productName": "Vili TCP/IP Com PORTS Redirector (Slave)",
     "directories": {
       "output": "release"
     },

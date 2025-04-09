@@ -3,7 +3,7 @@
     <div class="flex justify-between">
       <div>
         <div class="flex items-center gap-2">
-          <div>UART Bağlantı Durumu:</div>
+          <div>Slave Port Bağlantı Durumu:</div>
           <div>{{ serialPortConnectionTypeIcon.name }}</div>
           <div class="flex items-center">
             <ElIcon :color="serialPortConnectionTypeIcon.color">
@@ -112,8 +112,7 @@ function createSerialConnection() {
     serialPort.setSerialConnectionStatus(true)
     serialPortConnectionType.value = connectionTypes.connected
 
-    serialPortConnection.pipe(new InterByteTimeoutParser({ interval: 10 })).on('data', (data: Buffer) => {
-      // serialPortConnection.on('data', (data: Buffer) => {
+    serialPortConnection.pipe(new InterByteTimeoutParser({ interval: 50 })).on('data', (data: Buffer) => {
       if (mqtt.checkConnection()) {
         mqtt.getConnection().publish(mqttTopics.admin.deviceDebug(client.getClientId()), data)
       } else {

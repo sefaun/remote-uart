@@ -2,7 +2,7 @@
   "name": "admin",
   "version": "1.0.0",
   "author": "SEFA UN",
-  "description": "This is Remote UART Admin Desktop App",
+  "description": "This is Vili TCP/IP Com PORTS Redirector (Master) Desktop App",
   "private": true,
   "type": "module",
   "main": "electron/main.js",
@@ -40,7 +40,7 @@
   "build": {
     "electronVersion": "35.0.1",
     "appId": "com.remoteUartAdmin.id",
-    "productName": "Remote UART - Admin",
+    "productName": "Vili TCP/IP Com PORTS Redirector (Master)",
     "directories": {
       "output": "release"
     },

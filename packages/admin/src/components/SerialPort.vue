@@ -1,7 +1,7 @@
 <template>
   <div class="w-full">
     <div class="flex items-center gap-2">
-      <div>UART Bağlantı Durumu:</div>
+      <div>Master Port Bağlantı Durumu:</div>
       <div>{{ uartConnectionTypeIcon.name }}</div>
       <div class="flex items-center">
         <ElIcon :color="uartConnectionTypeIcon.color">
@@ -50,6 +50,9 @@ import { useMQTT } from '@/composables/MQTT'
 import { useSerialPort } from '@/composables/SerialPort'
 import { useSerialPortSettingsDialog } from '@/composables/SerialPortSettingsDialog'
 import SerialPortSettings from '@/components/SerialPortSettings.vue'
+const { InterByteTimeoutParser } = window.require(
+  '@serialport/parser-inter-byte-timeout'
+) as typeof import('@serialport/parser-inter-byte-timeout')
 
 const client = useClient()
 const mqtt = useMQTT()
@@ -112,7 +115,7 @@ function createSerialConnection() {
   serialPortConnection.on('open', () => {
     serialPort.setSerialConnectionStatus(true)
     serialPortConnectionType.value = connectionTypes.connected
-    serialPortConnection.on('data', (data: Buffer) => {
+    serialPortConnection.pipe(new InterByteTimeoutParser({ interval: 50 })).on('data', (data: Buffer) => {
       if (mqtt.checkConnection()) {
         mqtt.getConnection().publish(mqttTopics.client.deviceDebug(client.getClientId()), data)
       } else {

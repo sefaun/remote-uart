@@ -33,7 +33,7 @@
         </div>
         <div class="flex justify-end items-center gap-2">
           <div class="flex justify-center items-center gap-2">
-            <div class="font-bold">Admin ID:</div>
+            <div class="font-bold">Master ID:</div>
             <div>
               <div v-if="mqttConnectionType != connectionTypes.notConnected" class="text-sm">
                 {{ admin.getAdminId() }}
@@ -59,7 +59,7 @@
         <SerialPort></SerialPort>
         <div class="w-full flex gap-5 mt-3">
           <ElTabs class="w-full">
-            <ElTabPane label="Client İşlemleri">
+            <ElTabPane label="Slave İşlemleri">
               <div class="w-full flex items-center">
                 <div>
                   <ElButton
@@ -70,11 +70,11 @@
                     type="info"
                     size="small"
                   >
-                    Client Bağlantı Kontrolü
+                    Slave Bağlantı Kontrolü
                   </ElButton>
                   <div class="flex items-center flex-wrap gap-2 mt-3">
                     <div class="w-full flex items-center gap-2">
-                      <div class="text-sm">Client ID:</div>
+                      <div class="text-sm">Slave ID:</div>
                       <div>
                         <div
                           v-if="mqttConnectionType != connectionTypes.notConnected"
@@ -125,7 +125,7 @@
                     type="info"
                     size="small"
                   >
-                    UART Bilgilerini Kontrol Et
+                    Slave Uzak Port Bağlantı Bilgilerini Kontrol Et
                   </ElButton>
                 </div>
                 <div class="mt-3">
@@ -170,7 +170,7 @@
             </ElTabPane>
           </ElTabs>
           <ElTabs class="w-full">
-            <ElTabPane label="Client'a Özel Komut Gönder">
+            <ElTabPane label="Slave'e Özel Komut Gönder">
               <div>
                 <div class="w-[500px] space-y-3">
                   <div class="flex items-center gap-2">
@@ -279,7 +279,7 @@ function mqttConnectionValidation() {
   if (admin.getAdminId().length < adminIdLength.min || admin.getAdminId().length > adminIdLength.max) {
     ElNotification({
       type: 'warning',
-      message: 'Admin ID en az 4 en fazla 36 karakter olabilir',
+      message: 'Master ID en az 4 en fazla 36 karakter olabilir',
     })
     return false
   }
@@ -287,7 +287,7 @@ function mqttConnectionValidation() {
   if (client.getClientId().length != clientIdLength.max) {
     ElNotification({
       type: 'warning',
-      message: 'Client ID 36 karakter olmalıdır',
+      message: 'Slave ID 36 karakter olmalıdır',
     })
     return false
   }
@@ -295,7 +295,7 @@ function mqttConnectionValidation() {
   if (admin.getAdminId() == client.getClientId()) {
     ElNotification({
       type: 'warning',
-      message: 'Admin ID ve Client ID aynı olamaz',
+      message: 'Master ID ve Slave ID aynı olamaz',
     })
     return false
   }
